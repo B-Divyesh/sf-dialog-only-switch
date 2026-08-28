@@ -1,0 +1,7 @@
+{
+  "asset": "hero-screening-room.png",
+  "use_case": "stylized-concept",
+  "generator": "/opt/fleet/lib/gen-image.sh (factory Azure image deployment)",
+  "generated_on": "2026-08-28",
+  "prompt": "Use case: stylized-concept. Asset type: wide PWA empty-state environmental illustration. Scene: an empty intimate screening room viewed from the back row, facing a broad cinema screen that shows a quiet misty coastal railway platform at blue hour. Two tiny anonymous silhouettes on the projected platform are calmly talking. A warm projector beam catches only a few dust particles and crosses a cool blue-green night atmosphere. Materials: worn charcoal velvet seats, matte black auditorium walls, hazy glass, soft paper-like painted texture, restrained fine film grain. Composition: cinematic 3:2 landscape, 28mm wide angle, low eye level, screen and projector beam centered, open dark lower third suitable behind interface copy, deep but legible shadows. Palette: charcoal, petrol teal, warm parchment, projector amber, muted rust. Polished editorial environmental concept art, atmospheric but grounded. No text, no letters, no captions, no watermark, no logos, no brands, no real or recognizable people, no copyrighted characters, no visible UI, no neon cyberpunk, no generic gradient, no distorted architecture."
+}
