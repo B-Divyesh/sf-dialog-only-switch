@@ -56,6 +56,22 @@ test('opens a real browser-generated local video file', async ({ page }, testInf
   await expect(page.getByRole('status')).toContainText('Video ready');
 });
 
+test('reports invalid captions and restores a saved session', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'Persistence and validation are verified once in Chromium.');
+  await page.goto('/');
+  await page.locator('#caption-input').setInputFiles({
+    name: 'wrong-format.vtt',
+    mimeType: 'text/vtt',
+    buffer: Buffer.from('1\n00:00:00,000 --> 00:00:01,000\nNot WebVTT'),
+  });
+  await expect(page.getByRole('status')).toContainText('does not begin with WEBVTT');
+  await page.getByRole('button', { name: 'Try sample captions' }).click();
+  await page.waitForTimeout(400);
+  await page.reload();
+  await expect(page.getByText('4 cues')).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('Restored sample-coast.vtt');
+});
+
 test('has no serious accessibility violations in the ready state', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'mobile', 'One axe scan is enough; mobile layout is covered separately.');
   await page.goto('/');
