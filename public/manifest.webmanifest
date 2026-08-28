@@ -1,0 +1,18 @@
+{
+  "name": "Dialog Only Switch",
+  "short_name": "Dialog Switch",
+  "description": "A private offline viewer for separating spoken dialogue from sound-effect captions in local video.",
+  "id": "/?source=pwa",
+  "start_url": "/?v=1",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090d0f",
+  "theme_color": "#101719",
+  "categories": ["education", "utilities", "video"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
