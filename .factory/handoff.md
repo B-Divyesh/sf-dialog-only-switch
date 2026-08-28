@@ -1,5 +1,27 @@
 # Dialog Only Switch — build handoff
 
+## Independent verification status — FAIL
+
+Verified 2026-08-28 UTC against candidate
+`15ddf0ddd08b126031cbfa9383612c5ec2b92683` and
+<https://dialog-only-switch.sociobot.in/>. **Do not release this candidate.**
+
+The live JS, CSS, and service worker exactly match this commit, and local
+unit/e2e/build checks pass. Release is blocked because the mandatory
+`.factory/claims.json` is missing, there are no executable claim tests, and
+the required isolated one-click sample-data demo is not implemented. `/demo`
+is only the normal landing page; it has no demo banner/reset/start-real
+controls and the existing “Try sample captions” writes to the normal
+IndexedDB session. The cold first screen also does not plainly say that the
+product is for language learners/caption readers or provide the mandated
+“Try it with sample data” action. Additional live gaps are missing CSP,
+short non-immutable asset caching, missing `.factory/demo.md`, and missing
+robots/sitemap/designed 404 artifacts.
+
+See [`.factory/verification.md`](verification.md) for commands, exact
+evidence, severity-ranked defects, and remediation required before a new
+verification.
+
 Work order: `dialog-only-switch-build-1`
 
 Completed: 2026-08-28
