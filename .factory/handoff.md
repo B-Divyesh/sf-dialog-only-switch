@@ -64,6 +64,13 @@ required response policy on Azure Static Web Apps. The production recheck must
 confirm the response headers and manifest MIME from the deployed host after
 this commit is published.
 
+At 14:29 UTC, after pushing `8aff695c035a7039caad615e67e58b1264daa691`,
+`https://dialog-only-switch.sociobot.in/demo` was still serving the prior
+artifact: it had no demo marker, no CSP, 30-second cache headers, and an
+`application/octet-stream` manifest. The repository push completed, but the
+factory-managed static deployment had not updated during the verification
+window. Re-run the live response-policy check when that deployment advances.
+
 ## Known constraints
 
 - The bundled WebM is the one-click demo video. User-provided playback still
