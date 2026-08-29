@@ -1,0 +1,14 @@
+{
+  "url": "https://dialog-only-switch.sociobot.in/privacy/",
+  "loadMs": 663,
+  "errors": [],
+  "a11y": {
+    "title": "Privacy — Dialog Only Switch",
+    "lang": "en",
+    "h1": 1,
+    "main": true,
+    "imgsMissingAlt": 0,
+    "buttonsUnlabeled": 0,
+    "textLength": 953
+  }
+}
