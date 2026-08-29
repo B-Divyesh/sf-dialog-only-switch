@@ -1,0 +1,44 @@
+[
+  {
+    "id": "isolated-demo",
+    "claim": "The sample demo is isolated and does not change a real session.",
+    "where": "/demo banner, README",
+    "test": "npm run test:e2e -- --grep @claim:isolated-demo",
+    "sandbox": "Fresh browser context at /demo; assert the bundled video and six WebVTT cues load, demo banner is visible, and only IndexedDB key demo:current is written."
+  },
+  {
+    "id": "reversible-filter",
+    "claim": "Switch between all cues and dialogue only, then temporarily reveal hidden environmental cues.",
+    "where": "Caption mix controls, README",
+    "test": "npm run test:e2e -- --grep @claim:reversible-filter",
+    "sandbox": "Fresh browser context at /demo; switch to Dialogue only, hold R to reveal a hidden environmental cue, and complete a dialogue practice line."
+  },
+  {
+    "id": "local-only",
+    "claim": "The viewer sends no sample or session data to third parties.",
+    "where": "Landing copy, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:local-only",
+    "sandbox": "Fresh browser context at /demo; record every request through the sample filtering and practice flow and assert every request remains same-origin."
+  },
+  {
+    "id": "video-not-saved",
+    "claim": "Local video files are never saved by the app.",
+    "where": "File picker, session controls, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:video-not-saved",
+    "sandbox": "Fresh browser context at /demo; select a browser-generated local WebM, inspect the separate demo session record, and assert it contains no local video filename or bytes."
+  },
+  {
+    "id": "session-export-import",
+    "claim": "Export and import the editable caption session as JSON.",
+    "where": "Session controls, README, privacy page",
+    "test": "npm run test:e2e -- --grep @claim:session-export-import",
+    "sandbox": "Fresh browser context at /demo; export after changing the filter, inspect the JSON, clear the session, and import that exact download."
+  },
+  {
+    "id": "offline-reload",
+    "claim": "The complete sample demo works offline after the first visit.",
+    "where": "Landing eyebrow, README",
+    "test": "npm run test:e2e -- --grep @claim:offline-reload",
+    "sandbox": "Fresh browser context at /demo; wait for the service worker, reload once online, set the context offline, reload, and assert the sample cues and video remain available."
+  }
+]

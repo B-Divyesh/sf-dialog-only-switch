@@ -1,8 +1,9 @@
-const VERSION = 'dialog-switch-v1';
+const VERSION = 'dialog-switch-v2';
 const SHELL = [
-  '/', '/offline.html', '/manifest.webmanifest', '/legal.css',
+  '/', '/demo', '/offline.html', '/404.html', '/manifest.webmanifest', '/legal.css',
   '/privacy/', '/terms/', '/icon-192.png', '/icon-512.png',
   '/icon-maskable-512.png', '/assets/hero-720.webp', '/assets/hero-1200.webp',
+  '/assets/harbor-dialogue-demo.vtt', '/assets/harbor-dialogue-demo.webm',
 ];
 
 self.addEventListener('install', (event) => {

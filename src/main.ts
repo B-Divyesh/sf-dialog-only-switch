@@ -8,22 +8,13 @@ import {
   type SavedSession,
   VttParseError,
 } from './model';
-import { clearSession, loadSession, saveSession } from './storage';
+import { clearSession, loadSession, saveSession, type SessionNamespace } from './storage';
 
-const SAMPLE_VTT = `WEBVTT
-
-00:00.000 --> 00:03.500
-[WAVES BREAKING]
-
-00:03.700 --> 00:07.200
-Could you say that once more, please?
-
-00:07.500 --> 00:09.500
-Of course. Take your time.
-
-00:09.700 --> 00:12.500
-♪ SOFT MUSIC ♪
-`;
+const DEMO_VTT_URL = '/assets/harbor-dialogue-demo.vtt';
+const DEMO_VIDEO_URL = '/assets/harbor-dialogue-demo.webm';
+const demoMode = window.location.pathname === '/demo' || new URLSearchParams(window.location.search).get('demo') === '1';
+const sessionNamespace: SessionNamespace = demoMode ? 'demo' : 'real';
+if (demoMode) document.title = 'Demo — Dialog Only Switch';
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('App root not found.');
@@ -35,17 +26,23 @@ app.innerHTML = `
         <img src="/icon-192.png" alt="" width="38" height="38" />
         <span>Dialog Only Switch</span>
       </a>
+      <nav class="site-nav" aria-label="Primary"><a href="/demo">Demo</a><a href="/privacy/">Privacy</a></nav>
       <div class="header-actions">
         <span class="connection-status" id="connection-status"><span aria-hidden="true"></span> Online</span>
         <button class="quiet-button install-button" id="install-button" type="button" hidden>Install app</button>
       </div>
     </header>
 
+    <aside class="demo-banner" id="demo-banner" ${demoMode ? '' : 'hidden'} aria-label="Demo mode">
+      <div><strong>Demo — sample data, nothing is saved</strong><span>Try the bundled harbor video and captions without changing your session.</span></div>
+      <div class="demo-actions"><button class="quiet-button" id="reset-demo" type="button">Reset demo</button><button class="solid-button" id="start-real" type="button">Start for real</button></div>
+    </aside>
+
     <main id="main">
       <section class="intro" aria-labelledby="page-title">
         <p class="eyebrow">Local video · editable WebVTT · offline</p>
-        <h1 id="page-title">Hear the line.<br /><em>Lower the noise.</em></h1>
-        <p class="intro-copy">Watch a video you own with a reversible dialogue-only caption track. Nothing is uploaded, and every cue decision stays in your hands.</p>
+        <h1 id="page-title">Focus on dialogue in your captions</h1>
+        <p class="intro-copy">For language learners, caption readers, and classrooms who want spoken lines without losing the original caption track.</p>
 
         <div class="load-panel" id="drop-zone">
           <div class="load-heading">
@@ -66,7 +63,7 @@ app.innerHTML = `
           </div>
           <div class="load-foot">
             <span>or drop both files here</span>
-            <button class="text-button" id="sample-button" type="button">Try sample captions</button>
+            <a class="text-button" id="sample-button" href="/demo">Try it with sample data <span>— opens a harbor video and captions</span></a>
           </div>
         </div>
         <p class="status-message" id="status-message" role="status" aria-live="polite">Ready when you are.</p>
@@ -90,7 +87,7 @@ app.innerHTML = `
               <div class="empty-player-copy" id="empty-player-copy"><span aria-hidden="true">◒</span><strong>Your screening room is ready</strong><small>Open a local video above. Captions can be explored without one.</small></div>
               <video id="video" controls playsinline preload="metadata" hidden aria-label="Local video player"></video>
               <div class="caption-layer" id="caption-layer" aria-live="off" hidden></div>
-              <div class="local-badge"><span aria-hidden="true">●</span> Local only</div>
+              <div class="local-badge"><span aria-hidden="true">●</span> ${demoMode ? 'Demo sample' : 'Local only'}</div>
             </div>
 
             <div class="mode-desk">
@@ -224,7 +221,7 @@ function queueSave(): void {
   if (!vttText) return;
   window.clearTimeout(saveTimer);
   saveTimer = window.setTimeout(() => {
-    void saveSession(sessionSnapshot()).catch(() => announce('Your changes work now, but browser storage could not save them.', 'error'));
+    void saveSession(sessionSnapshot(), sessionNamespace).catch(() => announce('Your changes work now, but browser storage could not save them.', 'error'));
   }, 250);
 }
 
@@ -350,13 +347,29 @@ function handleVideoFile(file: File): void {
   if (!looksLikeVideo) throw new Error('Choose a video file supported by your browser, such as MP4 or WebM.');
   if (videoUrl) URL.revokeObjectURL(videoUrl);
   videoUrl = URL.createObjectURL(file);
-  video.src = videoUrl;
+  openVideo(videoUrl, file.name);
+}
+
+function openVideo(source: string, name: string): void {
+  video.src = source;
   video.hidden = false;
   emptyArt.hidden = true;
   emptyPlayerCopy.hidden = true;
-  byId('video-file-name').textContent = file.name;
-  announce(`Opening ${file.name}…`);
+  byId('video-file-name').textContent = name;
+  announce(`Opening ${name}…`);
   video.load();
+}
+
+async function loadDemo(): Promise<void> {
+  try {
+    const response = await fetch(DEMO_VTT_URL);
+    if (!response.ok) throw new Error('The sample captions could not be opened. Refresh and try again.');
+    loadCaptionText(await response.text(), 'harbor-dialogue-demo.vtt');
+    openVideo(DEMO_VIDEO_URL, 'harbor-dialogue-demo.webm');
+    announce('Demo ready: a short harbor video and six editable WebVTT cues are loaded.', 'success');
+  } catch (error) {
+    handleError(error);
+  }
 }
 
 function handleError(error: unknown): void {
@@ -378,7 +391,8 @@ captionInput.addEventListener('change', () => {
 
 video.addEventListener('loadedmetadata', () => {
   const duration = Number.isFinite(video.duration) ? ` — ${formatTime(video.duration)} long` : '';
-  announce(`Video ready${duration}. Add captions or press play.`, 'success');
+  const isDemoVideo = video.currentSrc.includes(DEMO_VIDEO_URL);
+  announce(isDemoVideo ? `Demo ready${duration}. Try Dialogue only or hold R to reveal a hidden cue.` : `Video ready${duration}. Add captions or press play.`, 'success');
 });
 video.addEventListener('error', () => announce('This browser could not play that video. Try an MP4 (H.264) or WebM file.', 'error'));
 video.addEventListener('timeupdate', () => updateCurrentCue());
@@ -459,8 +473,6 @@ byId('close-practice').addEventListener('click', () => {
   practicePanel.hidden = true;
 });
 
-byId('sample-button').addEventListener('click', () => loadCaptionText(SAMPLE_VTT, 'sample-coast.vtt'));
-
 exportButton.addEventListener('click', () => {
   if (!cues.length) return;
   const blob = new Blob([JSON.stringify(sessionSnapshot(), null, 2)], { type: 'application/json' });
@@ -486,7 +498,7 @@ importInput.addEventListener('change', () => {
 
 clearButton.addEventListener('click', () => {
   if (!window.confirm(`Clear the saved caption session “${vttName}” and all cue corrections from this browser? Your original file will not be changed.`)) return;
-  void clearSession().then(() => {
+  void clearSession(sessionNamespace).then(() => {
     cues = [];
     vttText = '';
     vttName = '';
@@ -500,6 +512,15 @@ clearButton.addEventListener('click', () => {
     announce('Saved captions and cue corrections were cleared from this browser.', 'success');
   }).catch(handleError);
 });
+
+if (demoMode) {
+  byId('reset-demo').addEventListener('click', () => {
+    void clearSession('demo').then(loadDemo).then(() => announce('Demo reset. The bundled video and captions are ready again.', 'success')).catch(handleError);
+  });
+  byId('start-real').addEventListener('click', () => {
+    void clearSession('demo').catch(() => undefined).finally(() => { window.location.assign('/'); });
+  });
+}
 
 let dragDepth = 0;
 window.addEventListener('dragenter', (event) => { event.preventDefault(); dragDepth += 1; dropOverlay.hidden = false; });
@@ -563,14 +584,18 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 }
 byId('refresh-button').addEventListener('click', () => window.location.reload());
 
-void loadSession().then((saved) => {
-  if (!saved?.vttText) return;
-  try {
-    loadCaptionText(saved.vttText, saved.vttName, saved);
-    announce(`Restored ${saved.vttName}. Select the local video again to continue.`, 'success');
-  } catch (error) {
-    handleError(error instanceof VttParseError ? error : new Error('The saved caption session could not be restored.'));
-  }
-}).catch(() => announce('Browser storage is unavailable. Files still work for this tab.', 'error'));
+if (demoMode) {
+  void loadDemo();
+} else {
+  void loadSession('real').then((saved) => {
+    if (!saved?.vttText) return;
+    try {
+      loadCaptionText(saved.vttText, saved.vttName, saved);
+      announce(`Restored ${saved.vttName}. Select the local video again to continue.`, 'success');
+    } catch (error) {
+      handleError(error instanceof VttParseError ? error : new Error('The saved caption session could not be restored.'));
+    }
+  }).catch(() => announce('Browser storage is unavailable. Files still work for this tab.', 'error'));
+}
 
 window.addEventListener('beforeunload', () => { if (videoUrl) URL.revokeObjectURL(videoUrl); });

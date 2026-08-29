@@ -103,3 +103,9 @@ Generation tool: factory Azure image deployment via
 `/opt/fleet/lib/gen-image.sh`; generated 2026-08-28. The selected image is an
 original generated work for this product. Its exact prompt is stored beside
 the source image in `assets/src/hero-screening-room.json`.
+
+The social preview at `public/assets/social-preview.jpg` is a 1200×630 center
+crop derived locally from that same original artwork on 2026-08-29. The demo
+video at `public/assets/harbor-dialogue-demo.webm` is an original, silent
+canvas animation made in Chromium with MediaRecorder on 2026-08-29; its
+simple harbor shapes have no brands, people, or third-party source material.

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dialog-only-switch.sociobot.in/sitemap.xml

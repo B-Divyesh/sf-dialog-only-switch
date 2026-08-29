@@ -37,7 +37,7 @@ button { color: inherit; }
 :focus-visible { outline: 3px solid var(--amber-200); outline-offset: 3px; }
 a { color: inherit; }
 .app-shell { overflow: clip; }
-.site-header, main, .site-footer { width: min(1440px, 100%); margin-inline: auto; }
+.site-header, main, .site-footer, .demo-banner { width: min(1440px, 100%); margin-inline: auto; }
 
 .site-header {
   min-height: 80px; padding: 16px clamp(20px, 4vw, 64px); display: flex; align-items: center;
@@ -46,10 +46,19 @@ a { color: inherit; }
 .brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 760; letter-spacing: -.02em; }
 .brand img { width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 0 0 1px rgba(255,255,255,.1); }
 .brand:focus-visible { border-radius: 10px; }
+.site-nav { display: flex; gap: 16px; margin-left: auto; }
+.site-nav a { min-height: 44px; display: inline-flex; align-items: center; color: var(--paper-300); text-underline-offset: 5px; font-size: .9rem; font-weight: 700; }
+.site-nav a:hover { color: var(--paper-50); }
 .header-actions { display: flex; align-items: center; gap: 12px; }
 .connection-status { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--paper-300); font-size: .875rem; }
 .connection-status span { width: 7px; height: 7px; border-radius: 50%; background: var(--teal-400); box-shadow: 0 0 0 4px rgba(113,184,172,.12); }
 .connection-status.is-offline span { background: var(--amber-400); }
+
+.demo-banner { position: relative; z-index: 2; min-height: 76px; padding: 12px clamp(20px, 4vw, 64px); display: flex; align-items: center; justify-content: space-between; gap: 18px; border-bottom: 1px solid rgba(233,173,85,.55); background: #202015; }
+.demo-banner > div:first-child { display: grid; gap: 3px; }
+.demo-banner strong { color: var(--amber-200); }
+.demo-banner span { color: var(--paper-300); font-size: .88rem; line-height: 1.4; }
+.demo-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 main { display: block; }
 .intro { position: relative; padding: clamp(72px, 10vw, 136px) clamp(20px, 7vw, 100px) 88px; isolation: isolate; }
@@ -86,7 +95,7 @@ h1 em { color: var(--amber-200); font-weight: 400; }
 .button-icon { flex: 0 0 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: var(--amber-400); color: var(--ink-950); font-weight: 900; }
 .cue-icon { border-radius: 9px; background: var(--teal-400); font-size: .8rem; letter-spacing: -.05em; }
 .load-foot { min-height: 50px; padding-top: 14px; display: flex; align-items: end; justify-content: space-between; gap: 16px; color: var(--paper-500); font-size: .875rem; }
-.text-button { min-height: 44px; padding: 4px 2px; border: 0; border-bottom: 1px solid var(--amber-400); background: transparent; color: var(--amber-200); cursor: pointer; font-weight: 700; }
+.text-button { min-height: 44px; padding: 4px 2px; border: 0; border-bottom: 1px solid var(--amber-400); background: transparent; color: var(--amber-200); cursor: pointer; font-weight: 700; text-decoration: none; }
 .text-button:hover { color: var(--paper-50); }
 .status-message { min-height: 26px; max-width: 1050px; margin: 14px 4px 0; color: var(--paper-300); font-size: .9rem; line-height: 1.5; }
 .status-message[data-tone="success"] { color: var(--teal-400); }
@@ -207,6 +216,9 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   .brand span { font-size: .92rem; }
   .connection-status { font-size: 0; }
   .connection-status span { display: block; }
+  .site-nav { gap: 10px; }
+  .site-nav a { font-size: .78rem; }
+  .demo-banner { align-items: flex-start; flex-direction: column; }
   .intro { padding-top: 58px; padding-bottom: 64px; }
   h1 { font-size: clamp(3.1rem, 15vw, 5rem); }
   .file-actions { grid-template-columns: 1fr; }
@@ -230,6 +242,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   .site-header { padding-inline: 16px; }
   .brand img { width: 34px; height: 34px; }
   .install-button { padding-inline: 10px; font-size: .8rem; }
+  .site-nav { display: none; }
   .intro, .workspace, .session-tools { padding-inline: 16px; }
   .load-panel { padding: 18px; }
   .load-heading { gap: 12px; }

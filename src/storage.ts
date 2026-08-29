@@ -4,6 +4,14 @@ const DATABASE = 'dialog-only-switch';
 const STORE = 'sessions';
 const CURRENT = 'current';
 
+export type SessionNamespace = 'real' | 'demo';
+
+function sessionKey(namespace: SessionNamespace): string {
+  // Demo data deliberately has a distinct key. It can never be restored into
+  // the person's normal session by accident.
+  return namespace === 'demo' ? 'demo:current' : CURRENT;
+}
+
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DATABASE, 1);
@@ -15,22 +23,22 @@ function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
-export async function loadSession(): Promise<SavedSession | null> {
+export async function loadSession(namespace: SessionNamespace = 'real'): Promise<SavedSession | null> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE, 'readonly');
-    const request = transaction.objectStore(STORE).get(CURRENT);
+    const request = transaction.objectStore(STORE).get(sessionKey(namespace));
     request.onsuccess = () => resolve((request.result as SavedSession | undefined) ?? null);
     request.onerror = () => reject(request.error ?? new Error('Could not read the saved session.'));
     transaction.oncomplete = () => db.close();
   });
 }
 
-export async function saveSession(session: SavedSession): Promise<void> {
+export async function saveSession(session: SavedSession, namespace: SessionNamespace = 'real'): Promise<void> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE, 'readwrite');
-    transaction.objectStore(STORE).put(session, CURRENT);
+    transaction.objectStore(STORE).put(session, sessionKey(namespace));
     transaction.oncomplete = () => {
       db.close();
       resolve();
@@ -39,11 +47,11 @@ export async function saveSession(session: SavedSession): Promise<void> {
   });
 }
 
-export async function clearSession(): Promise<void> {
+export async function clearSession(namespace: SessionNamespace = 'real'): Promise<void> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE, 'readwrite');
-    transaction.objectStore(STORE).delete(CURRENT);
+    transaction.objectStore(STORE).delete(sessionKey(namespace));
     transaction.oncomplete = () => {
       db.close();
       resolve();
