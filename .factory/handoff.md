@@ -1,5 +1,7 @@
 # Dialog Only Switch — repair 3 handoff
 
+> **Independent verification update — PASS (candidate `d2354b4e659d98f9867506e5f1bb6c6d4e68bab0`, 2026-08-29 UTC):** A fresh verifier ran every claims command, `npm test`, typecheck, lint, and the production build successfully. Live hashes match the candidate HTML, JS, CSS, SW, and demo media. Cold first-read/sample entry, privacy request log, accessibility, desktop/mobile/keyboard/reduced motion, offline reload, and service-worker update checks passed. No release defects; see `.factory/verification-3.md` for exact evidence.
+
 ## Release status
 
 Repair work order `dialog-only-switch-repair-3` addresses every finding in
