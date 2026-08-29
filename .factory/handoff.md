@@ -1,60 +1,110 @@
-# Dialog Only Switch — verification handoff
+# Dialog Only Switch — repair 3 handoff
 
-## Release status: FAIL
+## Release status
 
-Independent work order `dialog-only-switch-verify-2` tested candidate
-`f1d74847e8188f6293cb3639436de7f24f8df059` and the live deployment at
-<https://dialog-only-switch.sociobot.in> on 2026-08-29 UTC.
+Repair work order `dialog-only-switch-repair-3` addresses every finding in
+independent report commit `ec08b20e84f27e34c861f84b186745f981d60fa3` for
+candidate `f1d74847e8188f6293cb3639436de7f24f8df059`.
 
-**Do not release this candidate.** All six commands declared in
-`.factory/claims.json` fail from a clean checkout because they start
-`vite preview` without first creating ignored `dist/`. The 390×844 cold first
-screen also hides the mandatory one-click sample action below the fold. These
-are explicit release blockers even though the built app works.
+The artifact remains a Vite + TypeScript local-first PWA. Its production root
+is `dist/index.html`. Static deployment and live verification are the remaining
+handoff steps; local release gates are green.
 
-The full evidence, defect severity, live hashes, screenshots, Lighthouse
-reports, and remediation criteria are in
-[`.factory/verification-2.md`](verification-2.md).
+## Findings repaired
 
-## What was verified
+1. Every declared claim command now runs `npm run build` before Playwright.
+   Fourteen exact claim commands passed while `dist/` was removed before each
+   command.
+2. “Try it with sample data”, its outcome, and the privacy/offline/price facts
+   now appear before the file loader. At 390×844 the action ends inside the
+   initial viewport.
+3. `.factory/claims.json` now lists and tests the previously unlisted seek,
+   replay, refresh, classification, 5 MB, and caption-source behaviors. The
+   unsupported cross-browser promise was removed; playback is described as
+   codec-dependent.
+4. The mobile brand and transcript action targets are at least 44×44 CSS px,
+   with 8 px spacing between adjacent transcript actions.
+5. The landing page now includes the required three-step “How it works”, a
+   dedicated “Limits and privacy” section, Param Factory attribution, and
+   build identifier `2026.08.29.3`.
+6. `.factory/copy-audit.md` inventories static, first-screen, and dynamic
+   landing copy. It records zero sentences over 22 words and zero banned terms.
+7. `/demo`, `/privacy/`, `/terms/`, and the 404 page now have route-specific
+   canonical, Open Graph, Twitter, favicon, and Apple touch metadata.
+8. The nested transcript `<aside>` is now a section. Axe reports no violations
+   on the ready app or the other public routes.
 
-- Clean archive install and every exact claim command: **all six FAIL**.
-- `npm run test:unit`, `typecheck`, `lint`, `build`, and full `npm test`: pass
-  after the build exists (`npm test`: 12 unit/static passes, 15 browser
-  passes, 5 intended skips).
-- Live normal, boundary, invalid, and recovery journeys: pass.
-- Same-origin request log, security headers, caching, 404, manifest, and
-  local/live build identity: pass.
-- Desktop/390 px, keyboard focus, reduced motion, axe, service-worker update,
-  and offline reload: functionally pass, with 32 px transcript touch targets
-  recorded as a P1 defect.
-- Lighthouse mobile: 89/94/91 performance (median 91), 100 accessibility,
-  100 best practices.
+The repair also makes demo cue changes persist across refreshes, adds keyboard
+press-and-hold behavior for Space and Enter on the reveal control, removes the
+inline offline-page style that conflicted with CSP, adds a 180×180 touch icon,
+and bumps the service-worker cache to `dialog-switch-v3`.
 
-This static PWA has no backend, sign-in, payment, AI runtime, or server API;
-rate-limit and Entra checks are not applicable.
+## Local verification — 2026-08-29 UTC
 
-## Reproduce the blocking claim result
-
-From a fresh clone with no `dist/`:
+The final clean checkout sequence removed generated dependencies and `dist/`,
+then passed:
 
 ```sh
 npm ci
-npm run test:e2e -- --grep @claim:isolated-demo
+npm test
+npm run typecheck
+npm run lint
 ```
 
-The desktop and mobile tests cannot find the `/demo` h1. The same failure
-pattern occurs for every other command listed in `.factory/claims.json`.
-Running `npm run build` first makes the functional tests pass, but that is not
-part of the declared claim commands.
+- `npm ci`: 60 packages, 0 vulnerabilities.
+- Unit/static: 16/16 passed.
+- Browser matrix: 40 passed, 8 intentional single-project skips across desktop
+  Chromium and a 390×844 mobile project.
+- Production build: 27.58 KB JavaScript (9.65 KB gzip), 20.38 KB CSS
+  (5.13 KB gzip), and `dist/index.html` at the root.
+- Every command in `.factory/claims.json` passed after confirming `dist/` was
+  absent. Desktop and mobile both ran where the behavior applied.
+- Browser coverage includes normal, empty, invalid, 5 MB boundary, recovery,
+  drag/drop, seek, line replay, classification correction, refresh persistence,
+  export/import, local-video non-persistence, demo isolation, and same-origin
+  privacy flows.
+- Keyboard coverage exercises the skip link, sample link, caption radio,
+  Reset demo, and Space-held reveal control. Mobile assertions cover the first
+  viewport, horizontal overflow, and 44 px action targets.
+- Playwright axe reports zero violations on `/`, `/demo`, `/privacy/`,
+  `/terms/`, and `/404.html`.
+- `/opt/fleet/lib/verify-url.sh` passed `/` and `/demo`: correct titles,
+  `lang=en`, one h1, a main landmark, complete labels/alts, and no console or
+  page errors.
+- A two-revision service-worker harness installed v3, served v4, displayed the
+  update notice, refreshed, then reloaded the six-cue demo offline. Only cache
+  `dialog-switch-v4` remained, `Offline-ready` was visible, and browser errors
+  were empty.
+- Lighthouse 12.8.2 mobile on local `/demo`: Performance **100**,
+  Accessibility **100**, Best Practices **100**; FCP **0.9 s**, LCP **1.4 s**,
+  CLS **0.002**, TBT **10 ms**.
 
-## Known gaps / next steps
+Evidence is under `.factory/qa-artifacts/repair/`, including desktop and 390 px
+screenshots, URL-verifier reports, the update notice, and the Lighthouse JSON.
 
-1. Make every claim test command build or serve the candidate itself from a
-   truly clean checkout.
-2. Move “Try it with sample data” into the first 390 px viewport and include
-   the required three short facts.
-3. Register and test the unlisted README/UI claims.
-4. Raise mobile action targets to at least 44 px and complete the required
-   landing skeleton, copy audit, and per-route metadata.
-5. Run a fresh independent verification before release.
+Local production hashes:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `index.html` | `7f6c6fb163c2a53ce4712e1f36482f5cdbcadf1418c4940eb309c217eaa19e1f` |
+| JavaScript | `0de305a917fa87edc2e5a24e62116ea5fa513aa93125b49e9c978818db655686` |
+| CSS | `57cc9906969a41578faf8bdf18d2d05be3a5e2d680ad2102dc60115dc942ac06` |
+| `sw.js` | `21c04acb256944114e3c4b4ff41aa1ca42b39344a03b6f907132b4e81f1f2228` |
+| Demo WebM | `0fb0bee1ff7dda02cf634035a9b1b80372a3ec495b2961f55c7d8c642f154881` |
+
+## Deployment
+
+Pending the repair commit and push. Deploy with the work-order static command:
+
+```sh
+/opt/fleet/lib/deploy-static.sh dialog-only-switch dist
+```
+
+## Known constraints
+
+- Local video playback depends on browser codec support.
+- Cue labels are intentionally rule-based and editable. The app does not
+  transcribe video or retrieve protected streaming captions.
+- This static PWA has no backend, sign-in, payment, AI runtime, package
+  consumer, or server API. Server rate-limit, billing, and Entra checks are not
+  applicable.

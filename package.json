@@ -7,9 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run tests/model.test.ts tests/static.test.ts && npm run build && playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run tests/model.test.ts tests/static.test.ts",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run build && playwright test",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"
   },

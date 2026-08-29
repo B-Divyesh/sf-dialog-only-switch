@@ -31,6 +31,25 @@ test('@claim:isolated-demo opens a complete sample in its separate storage names
   await expect(page.getByText('No captions yet')).toBeVisible();
 });
 
+test('@claim:drag-drop opens a dropped local video and WebVTT file together', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await page.evaluate(async () => {
+    const [videoResponse, captionsResponse] = await Promise.all([
+      fetch('/assets/harbor-dialogue-demo.webm'),
+      fetch('/assets/harbor-dialogue-demo.vtt'),
+    ]);
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([await videoResponse.blob()], 'dropped-harbor.webm', { type: 'video/webm' }));
+    transfer.items.add(new File([await captionsResponse.blob()], 'dropped-captions.vtt', { type: 'text/vtt' }));
+    window.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: transfer }));
+  });
+  await expect(page.getByText('dropped-harbor.webm')).toBeVisible();
+  await expect(page.getByText('dropped-captions.vtt')).toBeVisible();
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await expect(page.locator('#video')).toBeVisible();
+});
+
 test('@claim:reversible-filter suppresses environmental cues and reveals them while held', async ({ page }) => {
   await page.goto('/demo');
   await expect(page.getByText('6 cues')).toBeVisible();
@@ -46,6 +65,82 @@ test('@claim:reversible-filter suppresses environmental cues and reveals them wh
   await expect(page.getByRole('heading', { name: 'Selected dialogue' })).toBeVisible();
   await page.getByRole('button', { name: 'Mark complete' }).click();
   await expect(page.getByRole('button', { name: 'Practiced ✓' }).first()).toBeVisible();
+});
+
+test('@claim:cue-classification labels common environmental cues and keeps corrections editable', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await expect(page.locator('#cue-summary')).toContainText('3 dialogue');
+  await expect(page.locator('#cue-summary')).toContainText('3 environmental');
+  await expect(page.locator('.effect-row .cue-copy').first()).toHaveText('[WAVES AGAINST THE PIER]');
+
+  await page.getByRole('button', { name: 'Mark cue as dialogue' }).first().click();
+  await expect(page.locator('#cue-summary')).toContainText('4 dialogue');
+  await expect(page.locator('#cue-summary')).toContainText('2 environmental');
+});
+
+test('@claim:seekable-transcript seeks the local video from a timed caption', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await page.getByRole('button', { name: /Seek to 0:01: Did the ferry/ }).click();
+  await expect.poll(() => page.locator('#video').evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThanOrEqual(1.5);
+  expect(await page.locator('#video').evaluate((element: HTMLVideoElement) => element.currentTime)).toBeLessThan(2.2);
+});
+
+test('@claim:line-replay plays one selected line and stops at its cue end', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await page.getByRole('button', { name: 'Practice line' }).first().click();
+  await page.getByRole('button', { name: 'Replay line' }).click();
+  await expect.poll(() => page.locator('#video').evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(1.4);
+  await expect(page.getByRole('status')).toContainText('Practice line finished', { timeout: 5000 });
+  expect(await page.locator('#video').evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+});
+
+test('@claim:refresh-persistence restores sample cue changes after a refresh', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await page.getByRole('button', { name: 'Mark cue as dialogue' }).first().click();
+  await expect(page.locator('#cue-summary')).toContainText('4 dialogue');
+  await page.getByLabel('Dialogue only').check();
+  await page.getByRole('button', { name: 'Practice line' }).first().click();
+  await page.getByRole('button', { name: 'Mark complete' }).click();
+  await page.waitForTimeout(400);
+  await page.reload();
+  await expect(page.locator('#cue-summary')).toContainText('4 dialogue');
+  await expect(page.getByLabel('Dialogue only')).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Practiced ✓' }).first()).toBeVisible();
+});
+
+test('@claim:caption-size-limit rejects caption files larger than 5 MB with recovery guidance', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await page.locator('#caption-input').setInputFiles({
+    name: 'too-large.vtt',
+    mimeType: 'text/vtt',
+    buffer: Buffer.alloc((5 * 1024 * 1024) + 1, 'a'),
+  });
+  await expect(page.getByRole('status')).toContainText('over 5 MB');
+  await expect(page.getByRole('status')).toContainText('Choose a smaller WebVTT file');
+});
+
+test('@claim:supplied-captions-only uses supplied WebVTT without transcription or caption services', async ({ page }) => {
+  const requested: string[] = [];
+  page.on('request', (request) => requested.push(request.url()));
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await expect(page.getByText('The viewer does not transcribe video or retrieve captions from other services.')).toBeVisible();
+  expect(requested.some((url) => new URL(url).pathname.endsWith('/harbor-dialogue-demo.vtt'))).toBe(true);
+  expect(requested.every((url) => url.startsWith('data:') || new URL(url).origin === 'http://127.0.0.1:4173')).toBe(true);
+});
+
+test('@claim:free-use runs the complete sample without an account or payment step', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page.getByText('Free to use')).toBeVisible();
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await page.getByLabel('Dialogue only').check();
+  await expect(page.getByText('Environmental cue hidden').first()).toBeVisible();
+  await expect(page.getByText(/buy|subscribe|payment/i)).toHaveCount(0);
 });
 
 test('@claim:local-only keeps the sample flow on the product origin', async ({ page }) => {
@@ -69,6 +164,30 @@ test('operates the demo reset control with the keyboard', async ({ page }) => {
   await expect(reset).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByLabel('All cues')).toBeChecked();
+});
+
+test('operates skip navigation, the sample link, caption mode, and reveal control by keyboard', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#main')).toBeFocused();
+
+  await page.getByRole('link', { name: 'Try it with sample data' }).focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+
+  const dialogueMode = page.getByLabel('Dialogue only');
+  await dialogueMode.focus();
+  await page.keyboard.press('Space');
+  await expect(dialogueMode).toBeChecked();
+  const reveal = page.getByRole('button', { name: /Hold to reveal/ });
+  await reveal.focus();
+  await page.keyboard.down('Space');
+  await expect(page.locator('#transcript-list').getByText('[WAVES AGAINST THE PIER]', { exact: true })).toBeVisible();
+  await page.keyboard.up('Space');
+  await expect(page.getByText('Environmental cue hidden').first()).toBeVisible();
 });
 
 test('@claim:session-export-import downloads and restores the editable session', async ({ page }, testInfo) => {
@@ -156,12 +275,22 @@ test('reports invalid captions and restores a saved session', async ({ page }, t
   await expect(page.getByRole('status')).toContainText('Demo ready');
 });
 
-test('has no serious accessibility violations in the ready state', async ({ page }, testInfo) => {
+test('has no automated accessibility violations in the ready state', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'mobile', 'One axe scan is enough; mobile layout is covered separately.');
   await page.goto('/demo');
   await expect(page.getByText('6 cues')).toBeVisible();
   const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
+  expect(results.violations).toEqual([]);
+});
+
+test('has no automated accessibility violations on the other public routes', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'Desktop scans cover static routes; mobile layout has dedicated checks.');
+  for (const route of ['/', '/privacy/', '/terms/', '/404.html']) {
+    await page.goto(route);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations, `${route} axe violations`).toEqual([]);
+  }
 });
 
 test('fits the 390px mobile viewport without horizontal overflow', async ({ page }, testInfo) => {
@@ -171,6 +300,52 @@ test('fits the 390px mobile viewport without horizontal overflow', async ({ page
   expect(widths.scroll).toBeLessThanOrEqual(widths.client);
   await expect(page.getByText('6 cues')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Transcript' })).toBeVisible();
+});
+
+test('keeps the sample action and three facts in the first 390px mobile screen', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', '390px mobile project only.');
+  await page.goto('/');
+  const sampleAction = page.getByRole('link', { name: 'Try it with sample data' });
+  await expect(sampleAction).toBeVisible();
+  const box = await sampleAction.boundingBox();
+  expect(box).not.toBeNull();
+  expect((box?.y ?? 844) + (box?.height ?? 0)).toBeLessThanOrEqual(844);
+  await expect(page.getByRole('list', { name: 'Product facts' })).toContainText('Free to use');
+  await expect(page.getByRole('list', { name: 'Product facts' })).toContainText('Files stay in your browser');
+  await expect(page.getByRole('list', { name: 'Product facts' })).toContainText('Works offline after the first visit');
+});
+
+test('gives mobile brand and transcript actions at least 44px touch targets', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', '390px mobile project only.');
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  const targets = await page.locator('.brand, .mini-button').evaluateAll((elements) => elements.map((element) => {
+    const box = element.getBoundingClientRect();
+    return { label: element.textContent?.trim(), width: box.width, height: box.height };
+  }));
+  expect(targets.length).toBeGreaterThan(1);
+  for (const target of targets) {
+    expect(target.height, `${target.label} height`).toBeGreaterThanOrEqual(44);
+    expect(target.width, `${target.label} width`).toBeGreaterThanOrEqual(44);
+  }
+});
+
+test('ships the required landing sections and build identifier', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'How it works' })).toBeVisible();
+  await expect(page.locator('.step-list > li')).toHaveCount(3);
+  await expect(page.getByRole('heading', { name: 'Limits and privacy' })).toBeVisible();
+  await expect(page.locator('footer')).toContainText('Built by Param Factory');
+  await expect(page.locator('footer')).toContainText('Build 2026.08.29.3');
+});
+
+test('sets complete metadata for the demo route', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page).toHaveTitle('Demo — Dialog Only Switch');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://dialog-only-switch.sociobot.in/demo');
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', 'https://dialog-only-switch.sociobot.in/demo');
+  await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute('content', 'Demo — Dialog Only Switch');
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/favicon.svg');
 });
 
 test('@claim:offline-reload reloads the complete demo from the service worker while offline', async ({ page, context }, testInfo) => {
