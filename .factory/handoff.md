@@ -6,9 +6,10 @@ Repair work order `dialog-only-switch-repair-3` addresses every finding in
 independent report commit `ec08b20e84f27e34c861f84b186745f981d60fa3` for
 candidate `f1d74847e8188f6293cb3639436de7f24f8df059`.
 
-The artifact remains a Vite + TypeScript local-first PWA. Its production root
-is `dist/index.html`. Static deployment and live verification are the remaining
-handoff steps; local release gates are green.
+The product repair is commit `c1b406fd0427f1220200e1fedf354f63b6f230c9`,
+pushed to `main` and deployed to
+<https://dialog-only-switch.sociobot.in>. The artifact remains a Vite +
+TypeScript local-first PWA. Its production root is `dist/index.html`.
 
 ## Findings repaired
 
@@ -92,13 +93,47 @@ Local production hashes:
 | `sw.js` | `21c04acb256944114e3c4b4ff41aa1ca42b39344a03b6f907132b4e81f1f2228` |
 | Demo WebM | `0fb0bee1ff7dda02cf634035a9b1b80372a3ec495b2961f55c7d8c642f154881` |
 
-## Deployment
+## Deployment and live evidence
 
-Pending the repair commit and push. Deploy with the work-order static command:
+The work-order deployment command ran unchanged after the repair commit was
+pushed:
 
 ```sh
 /opt/fleet/lib/deploy-static.sh dialog-only-switch dist
 ```
+
+Azure reused `sf-dialog-only-switch` (Standard, Central US), completed
+deployment `4a47d85d-db6e-49e2-bedb-68bf84f97cfb`, and reported the existing
+custom domain Ready.
+
+Live verification on 2026-08-29 UTC:
+
+- `/`, `/demo`, `/privacy/`, `/terms/`, `/robots.txt`, `/sitemap.xml`, the
+  manifest, favicon, and touch icon return 200. An unknown path returns the
+  designed page with status 404.
+- `/opt/fleet/lib/verify-url.sh` passes `/` and `/demo` with the correct route
+  titles, `lang=en`, one h1, a main landmark, complete labels/alts, and no
+  console or page errors.
+- The exercised demo loads six cues, filters and reveals cues, completes a
+  practice line, and reloads offline with `Offline-ready`. Every request is to
+  `https://dialog-only-switch.sociobot.in`; browser errors and axe violations
+  are both zero.
+- The 390×844 page has no horizontal overflow. The sample action ends at
+  501.58 px, every checked mobile action is at least 44 px high, and a 200%
+  text-size run still has 390/390 px page width without clipped content.
+- Reduced-motion emulation matches and reduces transitions and animations to
+  `0.00001 s`.
+- Every rendered link across the app, privacy, terms, and 404 routes resolves
+  to 200, including the named external source and contact links.
+- Live Lighthouse 12.8.2 mobile on `/demo`: Performance **100**,
+  Accessibility **100**, Best Practices **100**; FCP **0.9 s**, LCP **1.1 s**,
+  CLS **0.002**, TBT **20 ms**.
+- Responses include HSTS, CSP with response-header `frame-ancestors`,
+  `Referrer-Policy`, `X-Content-Type-Options`, and `X-Frame-Options: DENY`.
+  Hashed assets return one-year immutable caching and the manifest returns
+  `application/manifest+json`.
+- Live and local SHA-256 values match exactly for `index.html`, JavaScript,
+  CSS, `sw.js`, and the demo WebM using the values in the table above.
 
 ## Known constraints
 
@@ -108,3 +143,5 @@ Pending the repair commit and push. Deploy with the work-order static command:
 - This static PWA has no backend, sign-in, payment, AI runtime, package
   consumer, or server API. Server rate-limit, billing, and Entra checks are not
   applicable.
+
+No release-blocking gaps remain for this repair.
