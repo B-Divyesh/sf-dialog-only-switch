@@ -1,36 +1,32 @@
-# Dialog Only Switch — polish 2 handoff
+# Dialog Only Switch — independent verification 7 handoff
 
 ## Outcome
 
-Polish 2 closes every finding in `review-1.md` and `review-2.md`. Repair
-commit: `39f8a5ab7aeb66168916c5a9ebff8d4fb0ef0d80`.
-
-The static build was deployed through `/opt/fleet/lib/deploy-static.sh` to
-<https://dialog-only-switch.sociobot.in>. Azure deployment ID:
-`e00f57c6-34eb-4dac-a8f5-fae4484ddef9`.
+**PASS** — candidate `7257118e4c3f94067a4d72ed1f23f52a6ed0f8e5` is accepted
+for https://dialog-only-switch.sociobot.in. The live deployment matches its
+app bundle, stylesheet, service worker, sample video, and sample WebVTT
+byte-for-byte. No Critical, High, Medium, or Low defects remain.
 
 ## Verification evidence
 
-- Fresh-clone install: `npm ci` installed 60 packages and reported zero
+- Clean install: `npm ci` installed 60 packages with 0 reported
   vulnerabilities.
-- Fresh-clone claim contract: every one of the 16 exact commands listed in
-  `.factory/claims.json` passed independently at commit `39f8a5a`. Each ran
-  from the production build against the isolated demo entry point.
+- Claim contract: all 16 exact demo-entry-point commands in
+  `.factory/claims.json` passed independently.
 - Full local suite: `npm test` passed 20 unit/static tests and 52 Playwright
-  checks; 10 project-specific duplicate checks were intentionally skipped.
-- Type and build: `npm run typecheck` and `npm run build` passed. `dist/` was
-  produced with 29.52 kB JavaScript (10.16 kB gzip) and 21.52 kB CSS
-  (5.36 kB gzip).
-- Live cold checks: `/opt/fleet/lib/verify-url.sh` passed `/`, `/?demo=1`, and
-  `/privacy/` with HTTP 200, no console errors, `lang="en"`, one h1, a main
-  landmark, and no image without alt. Evidence is in
-  `.factory/qa-artifacts/polish-2/live-{root,demo,privacy}/`.
-- Live axe, using Playwright at 390 px, reported zero WCAG 2 A/AA violations
-  and zero console errors on `/`, `/?demo=1`, `/privacy/`, and `/terms/`.
-- Live demo recheck: one click put the sample video at y=402.2 in an 844 px
-  viewport. The banner showed “Leave sample mode”, the old label was absent,
-  no forbidden review-copy phrase remained, and `/privacy/`, `/terms/`, and a
-  missing route returned 200, 200, and 404 respectively.
+  checks; 10 documented project-specific checks were skipped.
+- `npm run typecheck`, `npm run lint`, and exact `npm run build` passed.
+  `dist/` contains 29.52 kB JS (10.16 kB gzip) and 21.52 kB CSS (5.36 kB
+  gzip).
+- Live desktop and 390 px mobile testing passed normal, boundary, and recovery
+  flows; keyboard focus, reduced motion, no-overflow, 44 px targets, PWA
+  offline reload/update handling, request privacy, response headers, caching,
+  and zero serious/critical axe findings all passed.
+- The cold first screen gives the product, audience, and first action in plain
+  words; its one-click sample opens a six-cue isolated demo.
+
+See `.factory/verification-7.md` for complete evidence, hashes, and the
+severity table.
 
 ## How to run
 
@@ -46,5 +42,5 @@ Open `http://localhost:4173/?demo=1` for the isolated sample. See
 
 ## Known gaps
 
-None. The product remains a static, local-first PWA with no account, payment,
-or runtime backend.
+None. This is a static, local-first PWA with no account, payment, runtime
+backend, or server-side endpoint.
