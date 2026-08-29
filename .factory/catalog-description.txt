@@ -1,1 +1,1 @@
-Filter local WebVTT captions to show spoken dialogue, practice timed lines, and export a focused track.
+Filter supplied WebVTT captions to focus on spoken dialogue, practice timed lines, and export a dialogue-only track.

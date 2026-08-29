@@ -43,7 +43,7 @@
   },
   {
     "id": "refresh-persistence",
-    "claim": "Caption text, filter choice, cue changes, and practice results survive a refresh.",
+    "claim": "WebVTT text, filter choice, cue-label changes, and practice results survive a refresh.",
     "where": "Session controls, privacy page, README",
     "test": "npm run test:e2e -- --grep @claim:refresh-persistence",
     "sandbox": "Fresh browser context at /demo; change one sample cue label, wait for the demo session save, reload, and assert the changed summary is restored."
@@ -71,7 +71,7 @@
   },
   {
     "id": "session-export-import",
-    "claim": "Export and import a caption session with changeable cue labels as JSON without rewriting the original WebVTT text.",
+    "claim": "Export and import a caption session with changeable cue labels as JSON without rewriting the supplied WebVTT text.",
     "where": "Session controls, privacy page, README",
     "test": "npm run test:e2e -- --grep @claim:session-export-import",
     "sandbox": "Fresh browser context at /demo; export after changing the filter, inspect the original VTT in the JSON, clear the session, and import that exact download."
@@ -99,14 +99,14 @@
   },
   {
     "id": "offline-reload",
-    "claim": "The complete sample demo works offline after the first visit.",
+    "claim": "The sample video and captions load offline after the first visit.",
     "where": "First-screen facts, README",
     "test": "npm run test:e2e -- --grep @claim:offline-reload",
     "sandbox": "Fresh browser context at /demo; wait for the service worker, reload once online, set the context offline, reload, and assert the sample cues and video remain available."
   },
   {
     "id": "free-use",
-    "claim": "The complete viewer and sample demo are free to use without an account or payment step.",
+    "claim": "The viewer and sample demo are free to use without an account or payment step.",
     "where": "First-screen facts, footer, terms, README",
     "test": "npm run test:e2e -- --grep @claim:free-use",
     "sandbox": "Fresh browser context at /demo; assert the free-use fact, load all six cues, and complete the dialogue filter flow without encountering account or payment controls."

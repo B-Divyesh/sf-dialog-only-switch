@@ -54,7 +54,7 @@ app.innerHTML = `
 
     <section class="demo-banner" id="demo-banner" ${demoMode ? '' : 'hidden'} aria-label="Demo mode">
       <div><strong>Demo — sample data, nothing is saved</strong><span>Try the harbor video without changing your session. Free to use.</span></div>
-      <div class="demo-actions"><button class="quiet-button" id="reset-demo" type="button">Reset demo</button><button class="solid-button" id="start-real" type="button">Start for real</button></div>
+      <div class="demo-actions"><button class="quiet-button" id="reset-demo" type="button">Reset demo</button><button class="solid-button" id="start-real" type="button">Leave sample mode</button></div>
     </section>
 
     <main id="main" class="${demoMode ? 'demo-main' : ''}" tabindex="-1">
@@ -70,7 +70,7 @@ app.innerHTML = `
         <ul class="plain-facts" aria-label="Product facts">
           <li data-claim="free-use">Free to use</li>
           <li data-claim="no-uploads">Files stay in your browser</li>
-          <li data-claim="offline-reload">Works offline after the first visit</li>
+          <li data-claim="offline-reload">Sample video and captions load offline after the first visit</li>
         </ul>`}
 
         <div class="load-panel" id="drop-zone">
@@ -156,7 +156,7 @@ app.innerHTML = `
       </section>
 
       <section class="session-tools" aria-labelledby="session-title">
-        <div><p class="eyebrow">Saved on this device</p><h2 id="session-title">Save or transfer your caption session</h2><p>Caption text and cue-label changes survive a refresh. Video files are never saved.</p></div>
+        <div><p class="eyebrow">Saved on this device</p><h2 id="session-title">Save or transfer your caption session</h2><p>WebVTT text and cue-label changes survive a refresh. Video files are never saved.</p></div>
         <div class="tool-actions">
           <button class="quiet-button" id="export-dialogue-vtt" type="button" disabled>Export Dialogue only VTT</button>
           <button class="quiet-button" id="export-corrected-vtt" type="button" disabled>Export corrected VTT</button>
@@ -180,7 +180,7 @@ app.innerHTML = `
         <div class="limits-copy">
           <p data-claim="supplied-captions-only">Add WebVTT captions yourself. The viewer does not transcribe video or retrieve captions from other services.</p>
           <p data-claim="caption-size-limit">Caption files must be WebVTT and no larger than 5 MB.</p>
-          <p data-claim="local-only">The app makes no third-party runtime requests. Video files stay in memory and are not saved.</p>
+          <p data-claim="local-only">The app does not contact other websites while you use it. Video files stay in memory and are not saved.</p>
         </div>
       </section>
     </main>
@@ -188,7 +188,7 @@ app.innerHTML = `
     <footer class="site-footer">
       <div><strong>Dialog Only Switch</strong><p>Free caption controls for learners and classrooms. Files stay in this browser.</p></div>
       <nav aria-label="Legal"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-dialog-only-switch">Source on GitHub</a></nav>
-      <p class="art-credit">Artwork and sample media made for this product · Built by Param Factory · Build ${BUILD_ID}</p>
+      <p class="art-credit">Built by Param Factory · Build ${BUILD_ID}</p>
     </footer>
   </div>
   <div class="drop-overlay" id="drop-overlay" hidden><strong>Drop video + WebVTT</strong><span>Files stay on this device</span></div>

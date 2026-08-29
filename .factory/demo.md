@@ -10,7 +10,7 @@ practice controls all have useful sample data.
 Demo state uses the IndexedDB key `demo:current` in the existing
 `dialog-only-switch` database. Real sessions use the separate `current` key.
 The persistent banner says “Demo — sample data, nothing is saved”. **Reset
-demo** discards and reloads the demo key. **Start for real** discards it and
+demo** discards and reloads the demo key. **Leave sample mode** discards it and
 returns to the normal viewer, which restores a separate real session if one
-exists. The sample video and VTT are precached, so
-the demo can be reloaded offline after its first visit.
+exists. The sample video and VTT are precached, so the sample video and
+captions load offline after the first visit.

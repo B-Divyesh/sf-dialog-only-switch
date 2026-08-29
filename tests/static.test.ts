@@ -119,11 +119,93 @@ test('keeps claims precise and ships route-focus support on every route', async 
   ]);
   const visitorCopy = [app, readme, privacy, terms, notFound].join('\n');
   expect(visitorCopy).not.toMatch(/editable (?:captions|WebVTT|timed transcript)/i);
-  expect(visitorCopy).not.toMatch(/suppressed cues|local-first|Ready when you are|Your session, your copy|Before you begin/);
+  expect(visitorCopy).not.toMatch(/suppressed cues|local-first|Ready when you are|Your session, your copy|Before you begin|Start for real|third-party runtime requests|original harbor|complete (?:bundled )?sample|made for this product/i);
+  expect(app).toContain('Leave sample mode');
+  expect(app).toContain('The app does not contact other websites while you use it.');
+  expect(readme).toContain('The sample video and captions load offline after the first visit.');
+  expect(readme).toContain('You do not need an account, and the viewer uploads nothing.');
   expect(routeFocus).toContain("heading.focus({ preventScroll: true })");
   for (const html of [root, privacy, terms, notFound]) {
     expect(html).toContain('/route-focus.js');
   }
+});
+
+test('records every README sentence and reviewed dynamic string in the copy audit', async () => {
+  const [audit, readme, app, model, privacy] = await Promise.all([
+    read('../.factory/copy-audit.md'),
+    read('../README.md'),
+    read('../src/main.ts'),
+    read('../src/model.ts'),
+    read('../public/privacy/index.html'),
+  ]);
+  const words = (value: string) => (value.match(/[\p{L}\p{N}][\p{L}\p{N}._:/-]*/gu) ?? []).length;
+  const normalizedReadme = readme
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replaceAll('`', '')
+    .replace(/\s+/g, ' ');
+  const readmeSentences = [
+    'Dialog Only Switch is a free, private viewer for language learners, caption readers, and classrooms.',
+    'It plays local video with supplied WebVTT captions.',
+    'The viewer can switch between all cues and “Dialogue only” without rewriting the source captions.',
+    'Try the bundled sample at',
+    'It opens a harbor video and six supplied WebVTT cues in an isolated demo session.',
+    'Opens local video and supplied `.vtt` files.',
+    'Labels bracketed sounds and music as environmental cues.',
+    'You can change each cue label.',
+    'Switches reversibly between “All cues” and “Dialogue only”.',
+    'Hold `R` (or the on-screen reveal control) to show hidden environmental cues temporarily.',
+    'Keeps a timed transcript beside the video.',
+    'Selecting a cue seeks to its line.',
+    'Replays one selected dialogue line and stops at its cue end.',
+    'Saves WebVTT text, filter choice, cue changes, and practice results in IndexedDB so they survive a refresh.',
+    'Keeps video files only in memory, so they must be selected after a refresh.',
+    'Exports Dialogue only and corrected WebVTT files.',
+    'It also transfers sessions as JSON.',
+    'The sample video and captions load offline after the first visit.',
+    'You do not need an account, and the viewer uploads nothing.',
+    'It never uploads video, captions, cue labels, or practice activity.',
+    'Limits caption files to 5 MB and gives a recovery message for larger files.',
+    'Uses supplied WebVTT captions.',
+    'It does not transcribe video or retrieve captions from other services.',
+    'Automatic cue labels are a starting point and may be wrong.',
+    'The original WebVTT source is retained separately and never rewritten.',
+    'Requirements: Node.js 20 or newer and npm.',
+    'Vite prints the local development URL.',
+    'Product claims and their tests are listed in',
+    'The demo uses `demo:current` in IndexedDB and never changes the normal `current` session key;',
+    'Tests cover the production build, desktop, a 390 px phone, and accessibility.',
+    'They also reload the sample without a network connection.',
+    'It writes the static site to `dist/`, with `dist/index.html` at its root.',
+    'Each command builds the product before its browser test, so it also works from a clean checkout.',
+    'Video playback depends on codecs available in the browser.',
+    'The bundled sample uses WebM.',
+    'Caption files must use WebVTT and may be no larger than 5 MB.',
+    'The app runs in your browser.',
+    'The app does not contact other websites while you use it.',
+    'Deploy the contents of `dist/` to a static HTTPS host.',
+    'The production policies are available at `/privacy/` and `/terms/`.',
+    'Artwork sources and creation notes are in `.factory/design.md`.',
+    'Build and test notes are in `.factory/handoff.md`.',
+  ];
+  for (const sentence of readmeSentences) {
+    const normalizedSentence = sentence.replaceAll('`', '');
+    expect(normalizedReadme).toContain(normalizedSentence);
+    expect(audit, `README sentence missing from audit: ${sentence}`).toContain(normalizedSentence);
+  }
+  const dynamicCopy = [
+    'Clear the saved caption session',
+    'The saved caption session could not be restored.',
+    'Skipped unrecognized content near line',
+    'Skipped an invalid cue near line',
+    'Leave sample mode',
+    'The app does not contact other websites while you use it.',
+  ];
+  for (const phrase of dynamicCopy) {
+    expect([app, model, privacy].join('\n')).toContain(phrase);
+    expect(audit, `visitor copy missing from audit: ${phrase}`).toContain(phrase);
+  }
+  expect(words('Dialog Only Switch is a free, private viewer for language learners, caption readers, and classrooms.')).toBe(15);
+  expect(audit).toContain('| Dialog Only Switch is a free, private viewer for language learners, caption readers, and classrooms. | 15 | Pass |');
 });
 
 test('records a complete landing-page copy audit with no word-count or banned-word flags', async () => {
@@ -131,7 +213,7 @@ test('records a complete landing-page copy audit with no word-count or banned-wo
   expect(audit).toContain('## Landing and demo — complete sentence inventory');
   expect(audit).toContain('Dynamic status and error copy');
   expect(audit).toContain('This file does not begin with WEBVTT.');
-  expect(audit).toContain('README sentence check');
+  expect(audit).toContain('README — complete sentence inventory');
   expect(audit).toContain('Flagged sentences: **0**');
   expect(audit).not.toMatch(/\|\s*(?:Over 22 words|Banned word)\s*\|/i);
   expect((audit.match(/\| Pass \|/g) ?? []).length).toBeGreaterThanOrEqual(30);

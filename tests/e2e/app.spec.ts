@@ -51,7 +51,7 @@ test('@claim:isolated-demo opens a complete sample in its separate storage names
   await page.getByLabel('Dialogue only').check();
   await page.getByRole('button', { name: 'Reset demo' }).click();
   await expect(page.getByLabel('All cues')).toBeChecked();
-  await page.getByRole('button', { name: 'Start for real' }).click();
+  await page.getByRole('button', { name: 'Leave sample mode' }).click();
   await page.waitForURL('/');
   await expect(page.locator('#demo-banner')).toBeHidden();
   await expect(page.getByText('1 cue')).toBeVisible();
@@ -137,7 +137,7 @@ test('@claim:line-replay plays one selected line and stops at its cue end', asyn
   expect(await page.locator('#video').evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
 });
 
-test('@claim:refresh-persistence restores sample cue changes after a refresh', async ({ page }) => {
+test('@claim:refresh-persistence restores saved WebVTT text, cue-label changes, mode, and practice after a refresh', async ({ page }) => {
   await page.goto('/demo');
   await expect(page.getByText('6 cues')).toBeVisible();
   await page.getByRole('button', { name: 'Mark cue as dialogue' }).first().click();
@@ -148,6 +148,7 @@ test('@claim:refresh-persistence restores sample cue changes after a refresh', a
   await page.waitForTimeout(400);
   await page.reload();
   await expect(page.locator('#cue-summary')).toContainText('4 dialogue');
+  await expect(page.getByText('Did the ferry leave already?', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Dialogue only')).toBeChecked();
   await expect(page.getByRole('button', { name: 'Practiced ✓' }).first()).toBeVisible();
 });
@@ -174,7 +175,7 @@ test('@claim:supplied-captions-only uses supplied WebVTT without transcription o
   expect(requested.every((url) => url.startsWith('data:') || new URL(url).origin === 'http://127.0.0.1:4173')).toBe(true);
 });
 
-test('@claim:free-use runs the complete sample without an account or payment step', async ({ page }) => {
+test('@claim:free-use runs the sample without an account or payment step', async ({ page }) => {
   await page.goto('/demo');
   await expect(page.getByText('Free to use')).toBeVisible();
   await expect(page.getByText('6 cues')).toBeVisible();
@@ -442,7 +443,7 @@ test('keeps the sample action and three facts in the first 390px mobile screen',
   expect((box?.y ?? 844) + (box?.height ?? 0)).toBeLessThanOrEqual(844);
   await expect(page.getByRole('list', { name: 'Product facts' })).toContainText('Free to use');
   await expect(page.getByRole('list', { name: 'Product facts' })).toContainText('Files stay in your browser');
-  await expect(page.getByRole('list', { name: 'Product facts' })).toContainText('Works offline after the first visit');
+  await expect(page.getByRole('list', { name: 'Product facts' })).toContainText('Sample video and captions load offline after the first visit');
 });
 
 test('opens the working sample in the first viewport after one click', async ({ page }, testInfo) => {
