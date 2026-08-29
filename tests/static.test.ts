@@ -34,3 +34,22 @@ test('ships demo documentation, media, and static-host response policy artifacts
   expect(notFound).toContain('<h1>');
   expect(manifestText).toContain('"start_url": "/?v=2"');
 });
+
+test('declares no Azure Static Web Apps route hidden by an earlier wildcard', async () => {
+  const config = JSON.parse(await read('../public/staticwebapp.config.json')) as {
+    routes: Array<{ route: string }>;
+  };
+
+  for (const [laterIndex, later] of config.routes.entries()) {
+    const earlierRoutes = config.routes.slice(0, laterIndex);
+    const shadowingRoute = earlierRoutes.find(({ route }) => {
+      if (!route.endsWith('*')) return route === later.route;
+      return later.route.startsWith(route.slice(0, -1));
+    });
+
+    expect(
+      shadowingRoute,
+      `${later.route} is unreachable behind earlier route ${shadowingRoute?.route}`,
+    ).toBeUndefined();
+  }
+});
