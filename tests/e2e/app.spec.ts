@@ -1,9 +1,34 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { parseVtt } from '../../src/model';
 
 test('@claim:isolated-demo opens a complete sample in its separate storage namespace', async ({ page }) => {
+  const realSession = {
+    version: 1,
+    savedAt: '2026-08-29T00:00:00.000Z',
+    vttName: 'real-session.vtt',
+    vttText: 'WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nA real saved line.\n',
+    mode: 'dialogue',
+    overrides: {},
+    completedCueIds: [],
+  };
+
+  // Seed a real session before entering demo mode. This proves that reset and
+  // leaving the demo only touch demo:current, rather than merely proving that
+  // an empty real namespace remains empty.
+  await page.goto('/');
+  await page.evaluate(async (session) => new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open('dialog-only-switch');
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const transaction = request.result.transaction('sessions', 'readwrite');
+      transaction.objectStore('sessions').put(session, 'current');
+      transaction.oncomplete = () => { request.result.close(); resolve(); };
+      transaction.onerror = () => reject(transaction.error);
+    };
+  }), realSession);
+
   await page.goto('/?demo=1');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Filter this sample');
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
@@ -22,14 +47,25 @@ test('@claim:isolated-demo opens a complete sample in its separate storage names
     };
   }));
   expect(records.demo).toMatchObject({ vttName: 'harbor-dialogue-demo.vtt' });
-  expect(records.real).toBeUndefined();
+  expect(records.real).toEqual(realSession);
   await page.getByLabel('Dialogue only').check();
   await page.getByRole('button', { name: 'Reset demo' }).click();
   await expect(page.getByLabel('All cues')).toBeChecked();
   await page.getByRole('button', { name: 'Open an empty viewer' }).click();
   await page.waitForURL('/');
   await expect(page.locator('#demo-banner')).toBeHidden();
-  await expect(page.getByText('No captions yet')).toBeVisible();
+  await expect(page.getByText('1 cue')).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('Restored real-session.vtt');
+  const finalRealRecord = await page.evaluate(async () => new Promise<unknown>((resolve, reject) => {
+    const request = indexedDB.open('dialog-only-switch');
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const transaction = request.result.transaction('sessions', 'readonly');
+      const record = transaction.objectStore('sessions').get('current');
+      transaction.oncomplete = () => { request.result.close(); resolve(record.result); };
+    };
+  }));
+  expect(finalRealRecord).toEqual(realSession);
 });
 
 test('@claim:drag-drop opens a dropped local video and WebVTT file together', async ({ page }) => {
@@ -154,6 +190,51 @@ test('@claim:local-only keeps the sample flow on the product origin', async ({ p
   const origins = requested.filter((url) => !url.startsWith('data:')).map((url) => new URL(url).origin);
   expect(origins).not.toHaveLength(0);
   expect([...new Set(origins)]).toEqual(['http://127.0.0.1:4173']);
+});
+
+test('@claim:no-uploads never sends local files or viewer activity over HTTP', async ({ page }) => {
+  const requests: Array<{ url: string; method: string; body: string | null }> = [];
+  page.on('request', (request) => {
+    if (request.url().startsWith('http')) {
+      requests.push({ url: request.url(), method: request.method(), body: request.postData() });
+    }
+  });
+
+  const captionName = 'private-caption-sentinel.vtt';
+  const captionText = 'WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nPRIVATE CAPTION SENTINEL\n';
+  const videoName = 'private-video-sentinel.webm';
+
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await page.getByLabel('Dialogue only').check();
+  await page.getByRole('button', { name: 'Practice line' }).first().click();
+  await page.getByRole('button', { name: 'Mark complete' }).click();
+
+  await page.locator('#caption-input').setInputFiles({
+    name: captionName,
+    mimeType: 'text/vtt',
+    buffer: Buffer.from(captionText),
+  });
+  await expect(page.locator('#caption-file-name')).toHaveText(captionName);
+  await page.locator('#video-input').setInputFiles({
+    name: videoName,
+    mimeType: 'video/webm',
+    buffer: Buffer.from('private video bytes'),
+  });
+  await expect(page.locator('#video-file-name')).toHaveText(videoName);
+  await page.waitForTimeout(350);
+
+  expect(requests).not.toHaveLength(0);
+  for (const request of requests) {
+    expect(new URL(request.url).origin).toBe('http://127.0.0.1:4173');
+    expect(request.method).toBe('GET');
+    expect(request.body).toBeNull();
+  }
+  const observedTraffic = JSON.stringify(requests);
+  expect(observedTraffic).not.toContain(captionName);
+  expect(observedTraffic).not.toContain(captionText);
+  expect(observedTraffic).not.toContain(videoName);
+  expect(observedTraffic).not.toContain('private video bytes');
 });
 
 test('operates the demo reset control with the keyboard', async ({ page }) => {
@@ -401,7 +482,7 @@ test('ships the required landing sections and build identifier', async ({ page }
   await expect(page.locator('.step-list > li')).toHaveCount(3);
   await expect(page.getByRole('heading', { name: 'Limits and privacy' })).toBeVisible();
   await expect(page.locator('footer')).toContainText('Built by Param Factory');
-  await expect(page.locator('footer')).toContainText('Build 2026.08.29.4');
+  await expect(page.locator('footer')).toContainText('Build 2026.08.29.5');
 });
 
 test('sets complete metadata for the demo route', async ({ page }) => {
@@ -426,4 +507,29 @@ test('@claim:offline-reload reloads the complete demo from the service worker wh
   await expect(page.locator('#video')).toBeVisible();
   await expect(page.getByText('Offline-ready')).toBeVisible();
   await context.setOffline(false);
+});
+
+test('installs a waiting service-worker update and removes the prior cache', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'One service-worker update path is enough; mobile offline layout is covered separately.');
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller?.scriptURL ?? '')).toContain('/sw.js');
+
+  const workerPath = new URL('../../dist/sw.js', import.meta.url);
+  const currentWorker = await readFile(workerPath, 'utf8');
+  const nextWorker = currentWorker
+    .replace("const VERSION = 'dialog-switch-v5'", "const VERSION = 'dialog-switch-v6'");
+  expect(nextWorker).toContain("const VERSION = 'dialog-switch-v6'");
+  await writeFile(workerPath, nextWorker);
+  try {
+    await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration())?.update(); });
+    await expect(page.locator('#update-toast')).toBeVisible();
+    await page.getByRole('button', { name: 'Install update' }).click();
+    await page.waitForLoadState('domcontentloaded');
+    await expect.poll(() => page.evaluate(() => caches.keys())).toEqual(['dialog-switch-v6']);
+  } finally {
+    await writeFile(workerPath, currentWorker);
+  }
 });

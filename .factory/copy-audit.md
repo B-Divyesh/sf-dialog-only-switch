@@ -10,12 +10,12 @@ one of these copy surfaces changes without a matching audit update.
 | Source | SHA-256 |
 | --- | --- |
 | `index.html` | `4b3646630193fe49c0470ac92a00a23dba780545decdb773b39a59509fec39ec` |
-| `src/main.ts` | `c566de2ece20bb7231dafe7857cea5dd7916c86f424455db4fe22ffb9481b622` |
+| `src/main.ts` | `f921b74dcead2d5ab2809b04fd3355c4dcfd2252079d15bdf242e5a6c0f6d4df` |
 | `src/model.ts` | `4d987d258fd5ee50df27bf12f511d5ca3d626693fb246d205f4032078e35969a` |
 | `public/route-focus.js` | `34c1a362861d93aa34e8ecc479f97e37e9a766d389f4141b04dafcaea9725022` |
-| `README.md` | `47a456c76cec2c8eea8d00c438cb424f45843cd908f5bd31eb41a705bf172dcd` |
-| `public/privacy/index.html` | `ded8c78f1a34c7d2a83d182eb1b9b15bcf068f021fbebe8f41e334da70ff6085` |
-| `public/terms/index.html` | `2f448852502b24bc5dd55c928909e6e8bf3a09ad08f275f54c6cdc7e29d56f11` |
+| `README.md` | `0d5b119d8e061fcde1894d750a0b34d0c122f4b7ad964417e598cb4aca903465` |
+| `public/privacy/index.html` | `53f5976f9ba0f5e9e21323357a2994e510ff506455ef1a4222aef7252cec905c` |
+| `public/terms/index.html` | `7be2f6d2b1e5f7db96962dddffe032f743b21e8f09464cc70cf7eda5fca019ff` |
 | `public/404.html` | `73cac21d18d4e3fbc574b449a57f8db6ca38aba4150d53bdf6af2c96efe23965` |
 
 ## Landing and demo — complete sentence inventory
@@ -179,6 +179,7 @@ all remaining sentences are 12 words or fewer.
 | Each command builds the product before its browser test, so it also works from a clean checkout. | 17 | Pass |
 | Video playback depends on codecs available in the browser. | 9 | Pass |
 | Caption files must use WebVTT and may be no larger than 5 MB. | 13 | Pass |
+| It never uploads video, captions, cue labels, or practice activity. | 10 | Pass |
 | The demo uses `demo:current` in IndexedDB and never changes the normal `current` session key. | 14 | Pass |
 
 The former 23-word test sentence is now two sentences of ten and nine words.

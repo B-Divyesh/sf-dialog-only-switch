@@ -1,4 +1,4 @@
-const VERSION = 'dialog-switch-v4';
+const VERSION = 'dialog-switch-v5';
 const SHELL = [
   '/', '/?demo=1', '/demo', '/offline.html', '/404.html', '/manifest.webmanifest', '/legal.css', '/route-focus.js',
   '/privacy/', '/terms/', '/favicon.svg', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',

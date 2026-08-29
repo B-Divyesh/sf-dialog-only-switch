@@ -16,6 +16,7 @@ test('ships a declared claim contract with one executable browser regression per
     'line-replay',
     'refresh-persistence',
     'local-only',
+    'no-uploads',
     'video-not-saved',
     'session-export-import',
     'webvtt-export',
@@ -50,12 +51,26 @@ test('ships demo documentation, media, and static-host response policy artifacts
   expect(demo).toContain('demo:current');
   expect(vtt).toContain('WEBVTT');
   expect(config.globalHeaders['Content-Security-Policy']).toContain("frame-ancestors 'none'");
-  expect(config.routes.some((route) => route.route === '/assets/*' && route.headers?.['Cache-Control']?.includes('immutable'))).toBe(true);
+  const generatedAssets = config.routes.find((route) => route.route === '/assets/v5/*');
+  const stableAssets = config.routes.find((route) => route.route === '/assets/*');
+  expect(generatedAssets?.headers?.['Cache-Control']).toContain('immutable');
+  expect(stableAssets?.headers?.['Cache-Control']).toBe('public, max-age=300, must-revalidate');
+  expect(stableAssets?.headers?.['Cache-Control']).not.toContain('immutable');
   expect(config.mimeTypes['.webmanifest']).toBe('application/manifest+json');
   expect(robots).toContain('Sitemap:');
   expect(sitemap).toContain('/demo');
   expect(notFound).toContain('<h1');
-  expect(manifestText).toContain('"start_url": "/?v=4"');
+  expect(manifestText).toContain('"start_url": "/?v=5"');
+});
+
+test('keeps immutable caching limited to Vite content-hashed build output', async () => {
+  const [viteConfig, serviceWorker] = await Promise.all([
+    read('../vite.config.ts'),
+    read('../public/sw.js'),
+  ]);
+  expect(viteConfig).toContain("assetsDir: 'assets/v5'");
+  expect(serviceWorker).toContain("const VERSION = 'dialog-switch-v5'");
+  expect(serviceWorker).toContain("'/assets/harbor-dialogue-demo.webm'");
 });
 
 test('ships the complete landing skeleton, 44px target rules, and no nested complementary landmark', async () => {

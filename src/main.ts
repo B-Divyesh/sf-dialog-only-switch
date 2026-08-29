@@ -13,7 +13,7 @@ import { clearSession, loadSession, saveSession, type SessionNamespace } from '.
 
 const DEMO_VTT_URL = '/assets/harbor-dialogue-demo.vtt';
 const DEMO_VIDEO_URL = '/assets/harbor-dialogue-demo.webm';
-const BUILD_ID = '2026.08.29.4';
+const BUILD_ID = '2026.08.29.5';
 const demoMode = window.location.pathname === '/demo' || new URLSearchParams(window.location.search).get('demo') === '1';
 const sessionNamespace: SessionNamespace = demoMode ? 'demo' : 'real';
 
@@ -69,7 +69,7 @@ app.innerHTML = `
         </div>
         <ul class="plain-facts" aria-label="Product facts">
           <li data-claim="free-use">Free to use</li>
-          <li data-claim="local-only">Files stay in your browser</li>
+          <li data-claim="no-uploads">Files stay in your browser</li>
           <li data-claim="offline-reload">Works offline after the first visit</li>
         </ul>`}
 

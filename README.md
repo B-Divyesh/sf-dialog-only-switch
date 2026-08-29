@@ -27,6 +27,7 @@ video and six supplied WebVTT cues in an isolated demo session.
   as JSON.
 - The complete sample demo works offline after its first visit. There are no
   accounts, analytics, uploads, third-party scripts, or CDN fonts.
+- It never uploads video, captions, cue labels, or practice activity.
 - Limits caption files to 5 MB and gives a recovery message for larger files.
 - Uses supplied WebVTT captions. It does not transcribe video or retrieve
   captions from other services.

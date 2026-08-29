@@ -56,6 +56,13 @@
     "sandbox": "Fresh browser context at /demo; record every request through the sample filtering and practice flow and assert every request remains same-origin."
   },
   {
+    "id": "no-uploads",
+    "claim": "The viewer never uploads video, captions, cue labels, or practice activity.",
+    "where": "First-screen facts, file loader, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:no-uploads",
+    "sandbox": "Fresh browser context at /demo; record every HTTP request while filtering, practising, loading a uniquely named local WebM and WebVTT, and saving the caption session. Assert every request is same-origin GET with no body and no local-file name or caption text in its URL or body."
+  },
+  {
     "id": "video-not-saved",
     "claim": "The viewer opens a local WebM in memory and never saves its name or bytes.",
     "where": "Session controls, limits, privacy page, README",
