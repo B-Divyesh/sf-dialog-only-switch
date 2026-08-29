@@ -143,3 +143,21 @@ export function formatTime(seconds: number): string {
     ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
     : `${minutes}:${String(secs).padStart(2, '0')}`;
 }
+
+function formatVttTimestamp(seconds: number): string {
+  const milliseconds = Math.max(0, Math.round(seconds * 1000));
+  const hours = Math.floor(milliseconds / 3_600_000);
+  const minutes = Math.floor((milliseconds % 3_600_000) / 60_000);
+  const remainder = milliseconds % 60_000;
+  const wholeSeconds = Math.floor(remainder / 1000);
+  const millis = remainder % 1000;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(wholeSeconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
+}
+
+export function exportVtt(cues: CaptionCue[]): string {
+  const blocks = cues.map((cue) => [
+    `${formatVttTimestamp(cue.start)} --> ${formatVttTimestamp(cue.end)}`,
+    cue.rawText,
+  ].join('\n'));
+  return `WEBVTT\n\n${blocks.join('\n\n')}${blocks.length ? '\n' : ''}`;
+}

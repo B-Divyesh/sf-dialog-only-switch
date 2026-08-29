@@ -1,5 +1,6 @@
 import './styles.css';
 import {
+  exportVtt,
   formatTime,
   parseVtt,
   type CaptionCue,
@@ -12,7 +13,7 @@ import { clearSession, loadSession, saveSession, type SessionNamespace } from '.
 
 const DEMO_VTT_URL = '/assets/harbor-dialogue-demo.vtt';
 const DEMO_VIDEO_URL = '/assets/harbor-dialogue-demo.webm';
-const BUILD_ID = '2026.08.29.3';
+const BUILD_ID = '2026.08.29.4';
 const demoMode = window.location.pathname === '/demo' || new URLSearchParams(window.location.search).get('demo') === '1';
 const sessionNamespace: SessionNamespace = demoMode ? 'demo' : 'real';
 
@@ -22,7 +23,7 @@ function setMetadata(selector: string, attribute: 'content' | 'href', value: str
 
 if (demoMode) {
   const title = 'Demo — Dialog Only Switch';
-  const description = 'Try dialogue-only captions with a bundled harbor video and six editable WebVTT cues.';
+  const description = 'Filter six supplied WebVTT cues with a bundled harbor video in an isolated sample session.';
   const canonical = 'https://dialog-only-switch.sociobot.in/demo';
   document.title = title;
   setMetadata('meta[name="description"]', 'content', description);
@@ -44,7 +45,7 @@ app.innerHTML = `
         <img src="/icon-192.png" alt="" width="38" height="38" />
         <span>Dialog Only Switch</span>
       </a>
-      <nav class="site-nav" aria-label="Primary"><a href="/demo">Demo</a><a href="/privacy/">Privacy</a></nav>
+      <nav class="site-nav" aria-label="Primary"><a href="/?demo=1" ${demoMode ? 'aria-current="page"' : ''}>Demo</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav>
       <div class="header-actions">
         <span class="connection-status" id="connection-status"><span aria-hidden="true"></span> Online</span>
         <button class="quiet-button install-button" id="install-button" type="button" hidden>Install app</button>
@@ -52,30 +53,30 @@ app.innerHTML = `
     </header>
 
     <section class="demo-banner" id="demo-banner" ${demoMode ? '' : 'hidden'} aria-label="Demo mode">
-      <div><strong>Demo — sample data, nothing is saved</strong><span>Try the bundled harbor video and captions without changing your session.</span></div>
-      <div class="demo-actions"><button class="quiet-button" id="reset-demo" type="button">Reset demo</button><button class="solid-button" id="start-real" type="button">Start for real</button></div>
+      <div><strong>Demo — sample data, nothing is saved</strong><span>Try the harbor video without changing your session. Free to use.</span></div>
+      <div class="demo-actions"><button class="quiet-button" id="reset-demo" type="button">Reset demo</button><button class="solid-button" id="start-real" type="button">Open an empty viewer</button></div>
     </section>
 
-    <main id="main" tabindex="-1">
-      <section class="intro" aria-labelledby="page-title">
-        <p class="eyebrow">Local video · editable WebVTT · offline</p>
-        <h1 id="page-title">Focus on dialogue in your captions</h1>
-        <p class="intro-copy">For language learners, caption readers, and classrooms who want spoken lines without losing the original caption track.</p>
+    <main id="main" class="${demoMode ? 'demo-main' : ''}" tabindex="-1">
+      <section class="intro" aria-labelledby="${demoMode ? 'loader-title' : 'page-title'}">
+        ${demoMode ? '' : `<p class="eyebrow">Local video · supplied WebVTT · offline</p>
+        <h1 id="page-title" tabindex="-1">Focus on dialogue in your captions</h1>
+        <p class="intro-copy">For language learners, caption readers, and classrooms who want spoken lines while keeping the original caption track.</p>
 
         <div class="first-action">
-          <a class="sample-action" id="sample-button" href="/demo">Try it with sample data</a>
-          <span>Opens a harbor video and six editable captions.</span>
+          <a class="sample-action" id="sample-button" href="/?demo=1">Try it with sample data</a>
+          <span>Opens a harbor video and six labelled captions.</span>
         </div>
         <ul class="plain-facts" aria-label="Product facts">
           <li data-claim="free-use">Free to use</li>
           <li data-claim="local-only">Files stay in your browser</li>
           <li data-claim="offline-reload">Works offline after the first visit</li>
-        </ul>
+        </ul>`}
 
         <div class="load-panel" id="drop-zone">
           <div class="load-heading">
             <span class="step-number" aria-hidden="true">01</span>
-            <div><h2>Open your files</h2><p>Choose a local video and its <strong>.vtt</strong> captions. They never leave this browser.</p></div>
+            <div><h2 id="loader-title">Open your files</h2><p>Choose a local video and its <strong>.vtt</strong> captions. They never leave this browser.</p></div>
           </div>
           <div class="file-actions">
             <label class="file-button primary-file">
@@ -93,12 +94,12 @@ app.innerHTML = `
             <span>Or drop both files into this page.</span>
           </div>
         </div>
-        <p class="status-message" id="status-message" role="status" aria-live="polite">Ready when you are.</p>
+        <p class="status-message" id="status-message" role="status" aria-live="polite">Choose a video and WebVTT caption file.</p>
       </section>
 
       <section class="workspace" aria-labelledby="viewer-title">
         <div class="workspace-heading">
-            <div><p class="eyebrow">Video and captions</p><h2 id="viewer-title">Your private viewer</h2></div>
+            <div><p class="eyebrow">Video and captions</p><${demoMode ? 'h1' : 'h2'} id="viewer-title" tabindex="-1">${demoMode ? 'Filter this sample to spoken lines' : 'Your private viewer'}</${demoMode ? 'h1' : 'h2'}></div>
           <div class="cue-summary" id="cue-summary">No captions loaded</div>
         </div>
 
@@ -127,7 +128,7 @@ app.innerHTML = `
                 <label><input type="radio" name="caption-mode" value="dialogue" /><span>Dialogue only</span></label>
               </fieldset>
               <button class="reveal-button" id="reveal-button" type="button" aria-describedby="reveal-help" disabled>
-                <kbd>R</kbd><span><strong>Hold to reveal</strong><small id="reveal-help">Show suppressed cues temporarily</small></span>
+                <kbd>R</kbd><span><strong>Hold to reveal</strong><small id="reveal-help">Show hidden environmental cues temporarily</small></span>
               </button>
             </div>
 
@@ -148,15 +149,17 @@ app.innerHTML = `
             </div>
             <p class="transcript-note" id="transcript-note">Load a WebVTT file to seek, review, and practice each timed line.</p>
             <ol class="transcript-list" id="transcript-list">
-              <li class="transcript-empty"><span aria-hidden="true">CC</span><strong>No captions yet</strong><small>Your editable timed transcript will appear here.</small></li>
+              <li class="transcript-empty"><span aria-hidden="true">CC</span><strong>No captions yet</strong><small>Your timed transcript will appear here.</small></li>
             </ol>
           </section>
         </div>
       </section>
 
       <section class="session-tools" aria-labelledby="session-title">
-        <div><p class="eyebrow">Saved on this device</p><h2 id="session-title">Your session, your copy</h2><p>Caption text and corrections survive a refresh. Video files are never saved.</p></div>
+        <div><p class="eyebrow">Saved on this device</p><h2 id="session-title">Save or transfer your caption session</h2><p>Caption text and cue-label changes survive a refresh. Video files are never saved.</p></div>
         <div class="tool-actions">
+          <button class="quiet-button" id="export-dialogue-vtt" type="button" disabled>Export Dialogue only VTT</button>
+          <button class="quiet-button" id="export-corrected-vtt" type="button" disabled>Export corrected VTT</button>
           <button class="quiet-button" id="export-button" type="button" disabled>Export session</button>
           <label class="quiet-button import-button">Import session<input id="import-input" type="file" accept="application/json,.json" /></label>
           <button class="danger-button" id="clear-button" type="button" disabled>Clear saved session</button>
@@ -168,12 +171,12 @@ app.innerHTML = `
         <ol class="step-list">
           <li><span>01</span><div><h3>Open your files</h3><p>Choose a local video and WebVTT captions from your device.</p></div></li>
           <li><span>02</span><div><h3>Check cue labels</h3><p>The viewer marks bracketed sounds and music as environmental cues. Change any label that is wrong.</p></div></li>
-          <li><span>03</span><div><h3>Focus and practice</h3><p>Switch views, select a cue to seek, practice a line, then export the session.</p></div></li>
+          <li><span>03</span><div><h3>Focus and practice</h3><p>Switch views, seek a cue, practice a line, then export a WebVTT file.</p></div></li>
         </ol>
       </section>
 
       <section class="limits-section" aria-labelledby="limits-title">
-        <div><p class="eyebrow">Before you begin</p><h2 id="limits-title">Limits and privacy</h2></div>
+        <div><h2 id="limits-title">Limits and privacy</h2></div>
         <div class="limits-copy">
           <p data-claim="supplied-captions-only">Add WebVTT captions yourself. The viewer does not transcribe video or retrieve captions from other services.</p>
           <p data-claim="caption-size-limit">Caption files must be WebVTT and no larger than 5 MB.</p>
@@ -183,19 +186,26 @@ app.innerHTML = `
     </main>
 
     <footer class="site-footer">
-      <div><strong>Dialog Only Switch</strong><p>Free, local-first caption control for learners and classrooms.</p></div>
+      <div><strong>Dialog Only Switch</strong><p>Free caption controls for learners and classrooms. Files stay in this browser.</p></div>
       <nav aria-label="Legal"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-dialog-only-switch">Source on GitHub</a></nav>
       <p class="art-credit">Artwork and sample media made for this product · Built by Param Factory · Build ${BUILD_ID}</p>
     </footer>
   </div>
   <div class="drop-overlay" id="drop-overlay" hidden><strong>Drop video + WebVTT</strong><span>Files stay on this device</span></div>
-  <div class="update-toast" id="update-toast" hidden role="status"><span>An app update is ready.</span><button type="button" id="refresh-button">Refresh</button></div>
+  <div class="update-toast" id="update-toast" hidden role="status"><span>An app update is ready.</span><button type="button" id="refresh-button">Install update</button></div>
 `;
 
 function byId<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
   if (!element) throw new Error(`Missing #${id}`);
   return element as T;
+}
+
+if (demoMode) {
+  const main = byId<HTMLElement>('main');
+  const workspace = main.querySelector<HTMLElement>('.workspace');
+  const loader = main.querySelector<HTMLElement>('.intro');
+  if (workspace && loader) main.insertBefore(workspace, loader);
 }
 
 const videoInput = byId<HTMLInputElement>('video-input');
@@ -216,6 +226,8 @@ const practicePanel = byId<HTMLElement>('practice-panel');
 const practiceText = byId<HTMLElement>('practice-text');
 const completeButton = byId<HTMLButtonElement>('complete-button');
 const exportButton = byId<HTMLButtonElement>('export-button');
+const exportDialogueVttButton = byId<HTMLButtonElement>('export-dialogue-vtt');
+const exportCorrectedVttButton = byId<HTMLButtonElement>('export-corrected-vtt');
 const clearButton = byId<HTMLButtonElement>('clear-button');
 const connectionStatus = byId<HTMLElement>('connection-status');
 const dropOverlay = byId<HTMLElement>('drop-overlay');
@@ -278,16 +290,18 @@ function updateSummary(): void {
     ? `<span><b>${dialogue}</b> dialogue</span><span><b>${effects}</b> environmental</span>`
     : 'No captions loaded';
   transcriptNote.textContent = cues.length
-    ? 'Choose a time to seek. Classification changes are reversible and never rewrite your VTT file.'
+    ? 'Choose a time to seek. Cue-label changes are reversible and never rewrite your VTT file.'
     : 'Load a WebVTT file to seek, review, and practice each timed line.';
   exportButton.disabled = !cues.length;
+  exportDialogueVttButton.disabled = !cues.length;
+  exportCorrectedVttButton.disabled = !cues.length;
   clearButton.disabled = !cues.length;
 }
 
 function renderTranscript(): void {
   updateSummary();
   if (!cues.length) {
-    transcriptList.innerHTML = '<li class="transcript-empty"><span aria-hidden="true">CC</span><strong>No captions yet</strong><small>Your editable timed transcript will appear here.</small></li>';
+    transcriptList.innerHTML = '<li class="transcript-empty"><span aria-hidden="true">CC</span><strong>No captions yet</strong><small>Your timed transcript will appear here.</small></li>';
     return;
   }
 
@@ -303,8 +317,8 @@ function renderTranscript(): void {
         <time datetime="PT${cue.start}S">${formatTime(cue.start)}</time>${visibleText}
       </button>
       <div class="cue-actions">
-        <span class="kind-badge"><span aria-hidden="true">${kind === 'dialogue' ? '“' : '◌'}</span>${kind === 'dialogue' ? 'Dialogue' : 'Environment'}</span>
-        <button class="mini-button" type="button" data-action="toggle-kind" aria-label="Mark cue as ${kind === 'dialogue' ? 'environmental' : 'dialogue'}">Mark as ${kind === 'dialogue' ? 'environment' : 'dialogue'}</button>
+        <span class="kind-badge"><span aria-hidden="true">${kind === 'dialogue' ? '“' : '◌'}</span>${kind === 'dialogue' ? 'Dialogue' : 'Environmental'}</span>
+        <button class="mini-button" type="button" data-action="toggle-kind" aria-label="Mark cue as ${kind === 'dialogue' ? 'environmental' : 'dialogue'}">Mark as ${kind === 'dialogue' ? 'environmental' : 'dialogue'}</button>
         ${kind === 'dialogue' ? `<button class="mini-button practice-cue" type="button" data-action="practice">${complete ? 'Practiced ✓' : 'Practice line'}</button>` : ''}
       </div>
     </li>`;
@@ -340,7 +354,7 @@ function setMode(nextMode: CaptionMode): void {
   mode = nextMode;
   if (mode === 'all') revealSuppressed = false;
   document.querySelectorAll<HTMLInputElement>('input[name="caption-mode"]').forEach((input) => { input.checked = input.value === mode; });
-  modeState.textContent = mode === 'dialogue' ? 'Environmental cues are suppressed' : 'All cues are visible';
+  modeState.textContent = mode === 'dialogue' ? 'Environmental cues are hidden' : 'All cues are visible';
   revealButton.disabled = mode !== 'dialogue' || !cues.some((cue) => kindFor(cue) === 'effect');
   revealButton.setAttribute('aria-pressed', String(revealSuppressed));
   renderTranscript();
@@ -352,7 +366,7 @@ function setReveal(active: boolean): void {
   revealSuppressed = active;
   revealButton.classList.toggle('is-revealing', active);
   revealButton.setAttribute('aria-pressed', String(active));
-  modeState.textContent = active ? 'Suppressed cues are temporarily revealed' : 'Environmental cues are suppressed';
+  modeState.textContent = active ? 'Hidden environmental cues are visible' : 'Environmental cues are hidden';
   renderTranscript();
 }
 
@@ -411,7 +425,7 @@ async function loadDemo(): Promise<void> {
     if (!response.ok) throw new Error('The sample captions could not be opened. Refresh and try again.');
     loadCaptionText(await response.text(), 'harbor-dialogue-demo.vtt');
     openVideo(DEMO_VIDEO_URL, 'harbor-dialogue-demo.webm');
-    announce('Demo ready: a short harbor video and six editable WebVTT cues are loaded.', 'success');
+    announce('Demo ready: a short harbor video and six supplied WebVTT cues are loaded.', 'success');
   } catch (error) {
     handleError(error);
   }
@@ -554,6 +568,27 @@ exportButton.addEventListener('click', () => {
   link.click();
   URL.revokeObjectURL(url);
   announce('Session exported. The original VTT text and your separate cue decisions are in the download.', 'success');
+});
+
+function downloadText(contents: string, filename: string, type: string): void {
+  const blob = new Blob([contents], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+exportDialogueVttButton.addEventListener('click', () => {
+  const dialogueCues = cues.filter((cue) => kindFor(cue) === 'dialogue');
+  downloadText(exportVtt(dialogueCues), `${vttName.replace(/\.vtt$/i, '') || 'captions'}.dialogue-only.vtt`, 'text/vtt');
+  announce(`Dialogue only WebVTT exported with ${dialogueCues.length} cues.`, 'success');
+});
+
+exportCorrectedVttButton.addEventListener('click', () => {
+  downloadText(exportVtt(cues), `${vttName.replace(/\.vtt$/i, '') || 'captions'}.corrected.vtt`, 'text/vtt');
+  announce(`Corrected WebVTT exported with all ${cues.length} cues.`, 'success');
 });
 
 importInput.addEventListener('change', () => {

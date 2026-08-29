@@ -1,0 +1,1 @@
+Filter local WebVTT captions to show spoken dialogue, practice timed lines, and export a focused track.

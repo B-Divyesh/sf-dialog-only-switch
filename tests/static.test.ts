@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { expect, test } from 'vitest';
 
 const read = (path: string) => readFile(new URL(path, import.meta.url), 'utf8');
@@ -17,6 +18,7 @@ test('ships a declared claim contract with one executable browser regression per
     'local-only',
     'video-not-saved',
     'session-export-import',
+    'webvtt-export',
     'caption-size-limit',
     'supplied-captions-only',
     'offline-reload',
@@ -52,8 +54,8 @@ test('ships demo documentation, media, and static-host response policy artifacts
   expect(config.mimeTypes['.webmanifest']).toBe('application/manifest+json');
   expect(robots).toContain('Sitemap:');
   expect(sitemap).toContain('/demo');
-  expect(notFound).toContain('<h1>');
-  expect(manifestText).toContain('"start_url": "/?v=3"');
+  expect(notFound).toContain('<h1');
+  expect(manifestText).toContain('"start_url": "/?v=4"');
 });
 
 test('ships the complete landing skeleton, 44px target rules, and no nested complementary landmark', async () => {
@@ -66,6 +68,7 @@ test('ships the complete landing skeleton, 44px target rules, and no nested comp
   expect(app).not.toContain('<aside');
   expect(styles).toMatch(/\.brand \{ min-height: 44px/);
   expect(styles).toMatch(/\.mini-button \{ min-height: 44px/);
+  expect(styles).toMatch(/\.skip-link \{[\s\S]*min-height: 44px/);
 });
 
 test('ships route-specific canonical, social, and favicon metadata', async () => {
@@ -88,13 +91,49 @@ test('ships route-specific canonical, social, and favicon metadata', async () =>
   expect(app).toContain("const canonical = 'https://dialog-only-switch.sociobot.in/demo'");
 });
 
+test('keeps claims precise and ships route-focus support on every route', async () => {
+  const [app, readme, routeFocus, root, privacy, terms, notFound] = await Promise.all([
+    read('../src/main.ts'),
+    read('../README.md'),
+    read('../public/route-focus.js'),
+    read('../index.html'),
+    read('../public/privacy/index.html'),
+    read('../public/terms/index.html'),
+    read('../public/404.html'),
+  ]);
+  const visitorCopy = [app, readme, privacy, terms, notFound].join('\n');
+  expect(visitorCopy).not.toMatch(/editable (?:captions|WebVTT|timed transcript)/i);
+  expect(visitorCopy).not.toMatch(/suppressed cues|local-first|Ready when you are|Your session, your copy|Before you begin/);
+  expect(routeFocus).toContain("heading.focus({ preventScroll: true })");
+  for (const html of [root, privacy, terms, notFound]) {
+    expect(html).toContain('/route-focus.js');
+  }
+});
+
 test('records a complete landing-page copy audit with no word-count or banned-word flags', async () => {
   const audit = await read('../.factory/copy-audit.md');
-  expect(audit).toContain('## Landing page — complete sentence inventory');
+  expect(audit).toContain('## Landing and demo — complete sentence inventory');
   expect(audit).toContain('Dynamic status and error copy');
+  expect(audit).toContain('This file does not begin with WEBVTT.');
+  expect(audit).toContain('README sentence check');
   expect(audit).toContain('Flagged sentences: **0**');
   expect(audit).not.toMatch(/\|\s*(?:Over 22 words|Banned word)\s*\|/i);
   expect((audit.match(/\| Pass \|/g) ?? []).length).toBeGreaterThanOrEqual(30);
+
+  for (const path of [
+    '../index.html',
+    '../src/main.ts',
+    '../src/model.ts',
+    '../public/route-focus.js',
+    '../README.md',
+    '../public/privacy/index.html',
+    '../public/terms/index.html',
+    '../public/404.html',
+  ]) {
+    const source = await read(path);
+    const hash = createHash('sha256').update(source).digest('hex');
+    expect(audit, `${path} changed without refreshing the copy audit`).toContain(`\`${hash}\``);
+  }
 });
 
 test('declares no Azure Static Web Apps route hidden by an earlier wildcard', async () => {

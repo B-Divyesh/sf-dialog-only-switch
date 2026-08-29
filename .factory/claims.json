@@ -2,9 +2,9 @@
   {
     "id": "isolated-demo",
     "claim": "The sample demo is isolated and does not change a real session.",
-    "where": "/demo banner, README",
+    "where": "/?demo=1 banner, README",
     "test": "npm run test:e2e -- --grep @claim:isolated-demo",
-    "sandbox": "Fresh browser context at /demo; assert the bundled video and six WebVTT cues load, the demo banner is visible, and only IndexedDB key demo:current is written."
+    "sandbox": "Fresh browser context at /?demo=1; assert the bundled video and six WebVTT cues load above the fold, the demo banner is visible, and only IndexedDB key demo:current is written."
   },
   {
     "id": "drag-drop",
@@ -22,7 +22,7 @@
   },
   {
     "id": "cue-classification",
-    "claim": "The viewer labels common bracketed sound and music cues as environmental, and every label remains editable.",
+    "claim": "The viewer labels common bracketed sound and music cues as environmental, and each cue label can be changed.",
     "where": "How it works, terms, README",
     "test": "npm run test:e2e -- --grep @claim:cue-classification",
     "sandbox": "Fresh browser context at /demo; assert the three bundled environmental cues are labelled separately, change one label, and verify the summary updates."
@@ -64,10 +64,17 @@
   },
   {
     "id": "session-export-import",
-    "claim": "Export and import the editable caption session as JSON without rewriting the original WebVTT text.",
+    "claim": "Export and import a caption session with changeable cue labels as JSON without rewriting the original WebVTT text.",
     "where": "Session controls, privacy page, README",
     "test": "npm run test:e2e -- --grep @claim:session-export-import",
     "sandbox": "Fresh browser context at /demo; export after changing the filter, inspect the original VTT in the JSON, clear the session, and import that exact download."
+  },
+  {
+    "id": "webvtt-export",
+    "claim": "Export corrected and Dialogue only WebVTT files; Dialogue only follows changed cue labels.",
+    "where": "Session tools, README",
+    "test": "npm run test:e2e -- --grep @claim:webvtt-export",
+    "sandbox": "Fresh browser context at /?demo=1; change one environmental cue to dialogue, download both WebVTT files, parse them, and verify the corrected file has six cues while Dialogue only has four."
   },
   {
     "id": "caption-size-limit",

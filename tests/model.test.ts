@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectCueKind, formatTime, parseTimestamp, parseVtt, VttParseError } from '../src/model';
+import { detectCueKind, exportVtt, formatTime, parseTimestamp, parseVtt, VttParseError } from '../src/model';
 
 describe('WebVTT parsing', () => {
   it('parses identifiers, markup, cue settings, and multiline text', () => {
@@ -33,6 +33,17 @@ Still here.
   it('rejects non-WebVTT and empty tracks with useful errors', () => {
     expect(() => parseVtt('00:00 --> 00:01\nHello')).toThrow(VttParseError);
     expect(() => parseVtt('WEBVTT\n\nNOTE no cues')).toThrow('No usable timed cues');
+  });
+
+  it('exports parseable WebVTT while preserving cue timing and source text', () => {
+    const parsed = parseVtt('WEBVTT\n\n00:01.200 --> 00:03.450\n<v Jo>Hello &amp; welcome.</v>\n\n00:04.000 --> 00:05.000\n[MUSIC]\n');
+    const exported = exportVtt(parsed.cues);
+    expect(exported).toContain('00:00:01.200 --> 00:00:03.450');
+    expect(exported).toContain('<v Jo>Hello &amp; welcome.</v>');
+    expect(parseVtt(exported).cues).toMatchObject([
+      { start: 1.2, end: 3.45, text: 'Hello & welcome.' },
+      { start: 4, end: 5, text: '[MUSIC]' },
+    ]);
   });
 });
 

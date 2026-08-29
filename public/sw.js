@@ -1,6 +1,6 @@
-const VERSION = 'dialog-switch-v3';
+const VERSION = 'dialog-switch-v4';
 const SHELL = [
-  '/', '/demo', '/offline.html', '/404.html', '/manifest.webmanifest', '/legal.css',
+  '/', '/?demo=1', '/demo', '/offline.html', '/404.html', '/manifest.webmanifest', '/legal.css', '/route-focus.js',
   '/privacy/', '/terms/', '/favicon.svg', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',
   '/icon-maskable-512.png', '/assets/hero-720.webp', '/assets/hero-1200.webp',
   '/assets/harbor-dialogue-demo.vtt', '/assets/harbor-dialogue-demo.webm',

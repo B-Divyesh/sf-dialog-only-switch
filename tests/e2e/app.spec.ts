@@ -1,10 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { parseVtt } from '../../src/model';
 
 test('@claim:isolated-demo opens a complete sample in its separate storage namespace', async ({ page }) => {
-  await page.goto('/demo');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Focus on dialogue');
+  await page.goto('/?demo=1');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Filter this sample');
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
   await expect(page.getByText('6 cues')).toBeVisible();
   await expect(page.locator('#video')).toBeVisible();
@@ -25,7 +26,7 @@ test('@claim:isolated-demo opens a complete sample in its separate storage names
   await page.getByLabel('Dialogue only').check();
   await page.getByRole('button', { name: 'Reset demo' }).click();
   await expect(page.getByLabel('All cues')).toBeChecked();
-  await page.getByRole('button', { name: 'Start for real' }).click();
+  await page.getByRole('button', { name: 'Open an empty viewer' }).click();
   await page.waitForURL('/');
   await expect(page.locator('#demo-banner')).toBeHidden();
   await expect(page.getByText('No captions yet')).toBeVisible();
@@ -175,7 +176,7 @@ test('operates skip navigation, the sample link, caption mode, and reveal contro
 
   await page.getByRole('link', { name: 'Try it with sample data' }).focus();
   await page.keyboard.press('Enter');
-  await page.waitForURL('/demo');
+  await page.waitForURL('/?demo=1');
   await expect(page.getByText('6 cues')).toBeVisible();
 
   const dialogueMode = page.getByLabel('Dialogue only');
@@ -208,6 +209,39 @@ test('@claim:session-export-import downloads and restores the editable session',
   await page.locator('#import-input').setInputFiles(output);
   await expect(page.getByText('6 cues')).toBeVisible();
   await expect(page.getByRole('status')).toContainText('Imported');
+});
+
+test('@claim:webvtt-export downloads parseable corrected and Dialogue only caption files', async ({ page }, testInfo) => {
+  await page.goto('/?demo=1');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await page.getByRole('button', { name: 'Mark cue as dialogue' }).first().click();
+  await expect(page.locator('#cue-summary')).toContainText('4 dialogue');
+
+  const dialogueDownloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export Dialogue only VTT' }).click();
+  const dialogueDownload = await dialogueDownloadPromise;
+  expect(dialogueDownload.suggestedFilename()).toBe('harbor-dialogue-demo.dialogue-only.vtt');
+  const dialoguePath = testInfo.outputPath(dialogueDownload.suggestedFilename());
+  await dialogueDownload.saveAs(dialoguePath);
+
+  const correctedDownloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export corrected VTT' }).click();
+  const correctedDownload = await correctedDownloadPromise;
+  expect(correctedDownload.suggestedFilename()).toBe('harbor-dialogue-demo.corrected.vtt');
+  const correctedPath = testInfo.outputPath(correctedDownload.suggestedFilename());
+  await correctedDownload.saveAs(correctedPath);
+
+  const dialogue = parseVtt(await readFile(dialoguePath, 'utf8')).cues;
+  const corrected = parseVtt(await readFile(correctedPath, 'utf8')).cues;
+  expect(dialogue).toHaveLength(4);
+  expect(dialogue.some((cue) => cue.text === '[WAVES AGAINST THE PIER]')).toBe(true);
+  expect(dialogue.some((cue) => cue.text === '[GULLS CRY IN THE DISTANCE]')).toBe(false);
+  expect(corrected).toHaveLength(6);
+  expect(corrected.map((cue) => ({ start: cue.start, end: cue.end, rawText: cue.rawText })))
+    .toEqual(expect.arrayContaining([
+      { start: 0, end: 1.5, rawText: '[WAVES AGAINST THE PIER]' },
+      { start: 1.6, end: 3.8, rawText: 'Did the ferry leave already?' },
+    ]));
 });
 
 test('@claim:video-not-saved opens a real browser-generated local video without storing it', async ({ page }, testInfo) => {
@@ -315,16 +349,47 @@ test('keeps the sample action and three facts in the first 390px mobile screen',
   await expect(page.getByRole('list', { name: 'Product facts' })).toContainText('Works offline after the first visit');
 });
 
-test('gives mobile brand and transcript actions at least 44px touch targets', async ({ page }, testInfo) => {
+test('opens the working sample in the first viewport after one click', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
+  await page.waitForURL('/?demo=1');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  const video = await page.locator('#video').boundingBox();
+  expect(video).not.toBeNull();
+  expect(video?.y).toBeLessThan(testInfo.project.name === 'mobile' ? 844 : 900);
+  await expect(page.locator('.mode-desk')).toBeInViewport();
+});
+
+test('allows real pointer clicks on every desktop header link', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'Desktop pointer regression only.');
+  for (const [label, expected] of [['Demo', '/?demo=1'], ['Privacy', '/privacy/'], ['Terms', '/terms/']] as const) {
+    await page.goto('/');
+    await page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: label }).click();
+    await page.waitForURL(expected);
+  }
+});
+
+test('moves focus to the new h1 after forward and back route navigation', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
+  await page.waitForURL('/?demo=1');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  await page.goBack();
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  await expect(page.locator('#route-announcer')).toContainText('Focus on dialogue');
+});
+
+test('gives every mobile interactive control at least a 44px touch target', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', '390px mobile project only.');
   await page.goto('/demo');
   await expect(page.getByText('6 cues')).toBeVisible();
-  const targets = await page.locator('.brand, .mini-button').evaluateAll((elements) => elements.map((element) => {
+  const targets = await page.locator('a, button, label.file-button, label.import-button, input[type="radio"] + span').evaluateAll((elements) => elements.map((element) => {
     const box = element.getBoundingClientRect();
     return { label: element.textContent?.trim(), width: box.width, height: box.height };
   }));
   expect(targets.length).toBeGreaterThan(1);
-  for (const target of targets) {
+  for (const target of targets.filter((target) => target.label && target.width > 0 && target.height > 0)) {
     expect(target.height, `${target.label} height`).toBeGreaterThanOrEqual(44);
     expect(target.width, `${target.label} width`).toBeGreaterThanOrEqual(44);
   }
@@ -336,7 +401,7 @@ test('ships the required landing sections and build identifier', async ({ page }
   await expect(page.locator('.step-list > li')).toHaveCount(3);
   await expect(page.getByRole('heading', { name: 'Limits and privacy' })).toBeVisible();
   await expect(page.locator('footer')).toContainText('Built by Param Factory');
-  await expect(page.locator('footer')).toContainText('Build 2026.08.29.3');
+  await expect(page.locator('footer')).toContainText('Build 2026.08.29.4');
 });
 
 test('sets complete metadata for the demo route', async ({ page }) => {
@@ -356,7 +421,7 @@ test('@claim:offline-reload reloads the complete demo from the service worker wh
   await page.reload();
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Focus on dialogue');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Filter this sample');
   await expect(page.getByText('6 cues')).toBeVisible();
   await expect(page.locator('#video')).toBeVisible();
   await expect(page.getByText('Offline-ready')).toBeVisible();
