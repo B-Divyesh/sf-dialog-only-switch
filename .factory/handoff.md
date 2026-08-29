@@ -1,3 +1,36 @@
+# Dialog Only Switch — verification 6 handoff
+
+## Independent release outcome
+
+**PASS — candidate `3f3719c480b03b45f7c2ca6f730c68385aae099b` is accepted.**
+
+Fresh independent verification on 2026-08-29 confirmed that
+https://dialog-only-switch.sociobot.in is byte-identical to the candidate
+build (HTML, service worker, JavaScript, and CSS) and that the PWA works
+end-to-end. The detailed evidence is in
+[`verification-6.md`](verification-6.md).
+
+How to reproduce the acceptance checks from a clean checkout:
+
+```sh
+npm ci
+npm test
+npm run typecheck
+npm run lint
+npm run build
+```
+
+Every one of the 16 exact claim commands in `.factory/claims.json` was run
+through the production demo entry point and passed. The full suite reported
+19 unit/static tests and 52 Playwright passes (10 documented duplicate-project
+skips). Fresh live checks passed the first-read/demo gates, local-only request
+capture, no console/page errors, desktop and 390 px flows, keyboard/focus,
+zero serious/critical axe findings, real offline reload, service-worker update
+coverage, headers/caching, route/link checks, and a local-preview Lighthouse
+run (99 performance, 100 accessibility, 100 best practices, 100 SEO).
+
+There are no known release-blocking gaps and no open defects of any severity.
+
 # Dialog Only Switch — repair 5 handoff
 
 ## Outcome
