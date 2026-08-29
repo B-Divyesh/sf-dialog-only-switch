@@ -1,0 +1,97 @@
+{
+  "checkedAt": "2026-08-29T17:07:51.349Z",
+  "base": "https://dialog-only-switch.sociobot.in",
+  "viewports": {
+    "desktop": {
+      "sampleActionBottom": 625,
+      "boxes": {
+        "#video": {
+          "top": 286,
+          "bottom": 789
+        },
+        ".mode-desk": {
+          "top": 803,
+          "bottom": 888
+        }
+      },
+      "summaryText": "3 dialogue\n3 environmental",
+      "requestOrigins": [
+        "https://dialog-only-switch.sociobot.in"
+      ],
+      "visibleTargetCount": 35,
+      "errors": []
+    },
+    "mobile-390": {
+      "sampleActionBottom": 502,
+      "boxes": {
+        "#video": {
+          "top": 402,
+          "bottom": 604
+        },
+        ".mode-desk": {
+          "top": 618,
+          "bottom": 808
+        }
+      },
+      "summaryText": "3 dialogue\n3 environmental",
+      "requestOrigins": [
+        "https://dialog-only-switch.sociobot.in"
+      ],
+      "visibleTargetCount": 35,
+      "errors": []
+    }
+  },
+  "routes": {
+    "/": {
+      "status": 200,
+      "contentType": "text/html"
+    },
+    "/?demo=1": {
+      "status": 200,
+      "contentType": "text/html"
+    },
+    "/demo": {
+      "status": 200,
+      "contentType": "text/html"
+    },
+    "/privacy/": {
+      "status": 200,
+      "contentType": "text/html"
+    },
+    "/terms/": {
+      "status": 200,
+      "contentType": "text/html"
+    },
+    "/robots.txt": {
+      "status": 200,
+      "contentType": "text/plain"
+    },
+    "/sitemap.xml": {
+      "status": 200,
+      "contentType": "text/xml"
+    },
+    "/missing-polish-check": {
+      "status": 404,
+      "contentType": "text/html"
+    }
+  },
+  "privacy": {},
+  "offline": {
+    "recheckedAt": "2026-08-29T17:08:42Z",
+    "cues": true,
+    "video": true,
+    "status": "Offline-ready"
+  },
+  "exports": {
+    "dialogueOnlyCues": 4,
+    "correctedCues": 6
+  },
+  "focus": {
+    "forwardH1": true,
+    "backH1": true
+  },
+  "a11y": {
+    "demoViolations": []
+  },
+  "errors": []
+}
