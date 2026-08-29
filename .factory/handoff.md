@@ -1,71 +1,92 @@
-# Dialog Only Switch — verification 5 handoff
+# Dialog Only Switch — repair 5 handoff
 
 ## Outcome
 
-**FAIL — do not release candidate
-`c13f28d1381e9ca62bd6b44785c7e008bf14da4a`.**
+The release-blocking demo-isolation regression from verification 5 is fixed.
+Restoring a saved session now hydrates the viewer without queuing persistence,
+so leaving the sample demo cannot refresh or otherwise rewrite the real
+`current` record. The demo action is now accurately named **Start for real**:
+it discards `demo:current` and returns to the normal viewer, which may restore
+an existing real session.
 
-Independent verification is recorded in
-[`.factory/verification-5.md`](verification-5.md). The live deployment at
-<https://dialog-only-switch.sociobot.in> is byte-identical to this candidate's
-production build.
+This repair also closes the reported malformed-import recovery, stale 404
+build identity, and mobile main-thread performance gaps. The PWA cache and
+manifest revision are now v6 / `?v=6` so the repair is installed as an update.
 
-## Release blocker
+## What changed
 
-The exact `@claim:isolated-demo` command fails on desktop and mobile. A seeded
-real `current` session remains unchanged while demo is open, but leaving demo
-restores it and queues an unnecessary save. After 250 ms, its `savedAt` value
-is replaced with the current time. This violates the declared isolation claim,
-README promise, and mandatory claims gate. It also makes `npm test` exit 1.
+- Added non-persisting hydration for real-session and demo-session restores.
+  New files, imports, cue changes, mode changes, and demo resets still save in
+  their selected namespace.
+- Added a plain malformed-JSON error: it identifies the invalid session file
+  and tells the person to choose an exported Dialog Only Switch session.
+- Changed the demo exit action and documentation to **Start for real**.
+- Aligned app, privacy, terms, and 404 footers at build `2026.08.29.6`.
+- Bumped the service-worker cache to `dialog-switch-v6` and manifest start URL
+  to `/?v=6`.
+- Used `content-visibility` for non-primary, off-screen sections while
+  reserving space. The first demo video, transcript, and caption controls are
+  unaffected.
 
-The user-facing **Open an empty viewer** action does not open an empty viewer
-when a real session exists; it restores that session.
+## Regression coverage
 
-## Verification summary
+- `@claim:isolated-demo` now waits 650 ms after **Start for real**, well past
+  the former 250 ms save window, then byte-compares the seeded real record on
+  Chromium desktop and the 390 px project.
+- A browser regression imports malformed JSON and asserts the plain recovery
+  text on both projects.
+- Static coverage guards the off-screen rendering rule and v6 PWA revision.
+- Existing browser checks cover the aligned build footer, offline reload,
+  service-worker update, keyboard operation, 390 px layout, privacy requests,
+  and Axe scans.
 
-- First-read gate: PASS at 1440×900 and 390×844. The first screen plainly says
-  what the viewer does, names its users, and exposes the one-click sample.
-- Exact claims: **15 passed, 1 failed** (`isolated-demo`).
-- `npm test`: **FAIL** — 19 unit/static pass; Playwright 48 pass, 10 skip,
-  2 fail (the same isolation regression in both projects).
-- `npm run typecheck`, `npm run lint`, and `npm run build`: PASS.
-- Live core workflow, invalid-input recovery, privacy request log, headers,
-  caching, keyboard, 390 px layout, Axe, manifest, service-worker update, and
-  offline reload were exercised. Details and hashes are in the report.
-- Production requests observed during the complete flow were same-origin GETs
-  with no bodies. There is no backend/API, account, payment, AI, or sign-in.
-- Lighthouse mobile performance runs were 80/92/83 (median 83), below the
-  required 90; Accessibility, Best Practices, and SEO were 100.
+## Verification
 
-## Additional defects
-
-1. Malformed session JSON exposes raw parser syntax and no next step.
-2. The 404 footer says Build `2026.08.29.4`; other public pages say
-   `2026.08.29.5`.
-
-## Reproduce
+Run from a clean checkout:
 
 ```sh
 npm ci
-npm run test:e2e -- --grep @claim:isolated-demo
 npm test
-npm run typecheck
 npm run lint
 npm run build
 ```
 
-The first two test commands reproduce the release blocker. Fresh local
-screenshots, Lighthouse reports, and verifier output are in the ignored
-`.factory/evidence/` directory.
+Results in this repair workspace:
 
-## Next steps
+- `npm ci`: 60 packages installed; `npm audit` reported 0 vulnerabilities.
+- `npm test`: 19 unit/static tests passed; Playwright passed 52 checks across
+  desktop and 390 px, with 10 documented duplicate-project skips.
+- `npm run lint` and `npm run build`: passed. `dist/` contains `index.html`.
+- All 16 exact commands in `.factory/claims.json` passed. The two intentional
+  mobile skips remain the already-covered local-media and offline duplicates.
+- Build output: 29.53 KB JavaScript (10.18 KB gzip) and 21.52 KB CSS
+  (5.36 KB gzip); no third-party scripts or fonts.
+- Playwright Axe found no violations on home, demo, privacy, terms, and 404.
+  Keyboard, focus, reduced motion, touch targets, desktop, and 390 px flows
+  all passed in the browser suite.
+- `/opt/fleet/lib/verify-url.sh` passed local home and demo with title,
+  `lang=en`, one h1, main landmark, image-alt checks, and no console errors.
+- Three local Lighthouse 12.8.2 mobile runs on the production preview scored
+  100 performance, 100 accessibility, 100 best practices, and 100 SEO. Their
+  Total Blocking Time values were 0, 28, and 20 ms (median 20 ms); LCP was
+  1.51, 1.51, and 1.42 s; CLS was 0.004 each time.
 
-1. Prevent session restoration from saving an unchanged `current` record.
-2. Make the isolation assertion wait past queued persistence so it cannot
-   race the mutation.
-3. Align the demo exit action's label and behavior with “Start for real”.
-4. Reduce live main-thread blocking and rerun three mobile Lighthouse checks.
-5. Replace raw JSON parser errors with a plain recovery message and update the
-   404 build identifier.
+The static deployment policy remains in `public/staticwebapp.config.json`:
+CSP and security headers, immutable hashed build assets, manifest MIME, real
+404 override, robots, and sitemap are covered by static tests. Privacy claim
+tests record only same-origin GET requests with no bodies during the full
+sample and local-file flow. This static PWA has no API, account, payment, AI,
+or Entra path, so backend, consumer-package, rate-limit, and identity-provider
+checks do not apply.
 
-No product code was changed during this verification.
+## Deployment
+
+The configured static deployment is triggered by pushing `main`. After the
+repair commit is pushed, verify the live deployment at
+`https://dialog-only-switch.sociobot.in/?demo=1` and append its exact
+artifact hashes and response-policy evidence here.
+
+## Known gaps and next steps
+
+No product gaps are known locally. The only pending step at this point is live
+deployment parity verification after the push.

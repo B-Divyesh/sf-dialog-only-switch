@@ -51,11 +51,14 @@ test('@claim:isolated-demo opens a complete sample in its separate storage names
   await page.getByLabel('Dialogue only').check();
   await page.getByRole('button', { name: 'Reset demo' }).click();
   await expect(page.getByLabel('All cues')).toBeChecked();
-  await page.getByRole('button', { name: 'Open an empty viewer' }).click();
+  await page.getByRole('button', { name: 'Start for real' }).click();
   await page.waitForURL('/');
   await expect(page.locator('#demo-banner')).toBeHidden();
   await expect(page.getByText('1 cue')).toBeVisible();
   await expect(page.getByRole('status')).toContainText('Restored real-session.vtt');
+  // The prior regression used a 250 ms delayed write during restoration. Wait
+  // well past that window so this test proves a real record remains untouched.
+  await page.waitForTimeout(650);
   const finalRealRecord = await page.evaluate(async () => new Promise<unknown>((resolve, reject) => {
     const request = indexedDB.open('dialog-only-switch');
     request.onerror = () => reject(request.error);
@@ -357,7 +360,7 @@ test('@claim:video-not-saved opens a real browser-generated local video without 
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  await expect(page.getByText('classroom-clip.webm')).toBeVisible();
+  await expect(page.locator('#video-file-name')).toHaveText('classroom-clip.webm');
   await expect(page.locator('#video')).toBeVisible();
   await expect(page.getByRole('status')).toContainText('Video ready');
   await page.waitForTimeout(350);
@@ -388,6 +391,18 @@ test('reports invalid captions and restores a saved session', async ({ page }, t
   await page.reload();
   await expect(page.getByText('6 cues')).toBeVisible();
   await expect(page.getByRole('status')).toContainText('Demo ready');
+});
+
+test('rejects malformed imported JSON with a plain recovery message', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page.getByText('6 cues')).toBeVisible();
+  await page.locator('#import-input').setInputFiles({
+    name: 'broken-session.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{broken'),
+  });
+  await expect(page.getByRole('status')).toContainText('This session file is not valid JSON');
+  await expect(page.getByRole('status')).toContainText('Choose a session file exported by Dialog Only Switch');
 });
 
 test('has no automated accessibility violations in the ready state', async ({ page }, testInfo) => {
@@ -482,7 +497,7 @@ test('ships the required landing sections and build identifier', async ({ page }
   await expect(page.locator('.step-list > li')).toHaveCount(3);
   await expect(page.getByRole('heading', { name: 'Limits and privacy' })).toBeVisible();
   await expect(page.locator('footer')).toContainText('Built by Param Factory');
-  await expect(page.locator('footer')).toContainText('Build 2026.08.29.5');
+  await expect(page.locator('footer')).toContainText('Build 2026.08.29.6');
 });
 
 test('sets complete metadata for the demo route', async ({ page }) => {
@@ -520,15 +535,15 @@ test('installs a waiting service-worker update and removes the prior cache', asy
   const workerPath = new URL('../../dist/sw.js', import.meta.url);
   const currentWorker = await readFile(workerPath, 'utf8');
   const nextWorker = currentWorker
-    .replace("const VERSION = 'dialog-switch-v5'", "const VERSION = 'dialog-switch-v6'");
-  expect(nextWorker).toContain("const VERSION = 'dialog-switch-v6'");
+    .replace("const VERSION = 'dialog-switch-v6'", "const VERSION = 'dialog-switch-v7'");
+  expect(nextWorker).toContain("const VERSION = 'dialog-switch-v7'");
   await writeFile(workerPath, nextWorker);
   try {
     await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration())?.update(); });
     await expect(page.locator('#update-toast')).toBeVisible();
     await page.getByRole('button', { name: 'Install update' }).click();
     await page.waitForLoadState('domcontentloaded');
-    await expect.poll(() => page.evaluate(() => caches.keys())).toEqual(['dialog-switch-v6']);
+    await expect.poll(() => page.evaluate(() => caches.keys())).toEqual(['dialog-switch-v7']);
   } finally {
     await writeFile(workerPath, currentWorker);
   }

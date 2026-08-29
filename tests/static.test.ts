@@ -60,7 +60,7 @@ test('ships demo documentation, media, and static-host response policy artifacts
   expect(robots).toContain('Sitemap:');
   expect(sitemap).toContain('/demo');
   expect(notFound).toContain('<h1');
-  expect(manifestText).toContain('"start_url": "/?v=5"');
+  expect(manifestText).toContain('"start_url": "/?v=6"');
 });
 
 test('keeps immutable caching limited to Vite content-hashed build output', async () => {
@@ -69,7 +69,7 @@ test('keeps immutable caching limited to Vite content-hashed build output', asyn
     read('../public/sw.js'),
   ]);
   expect(viteConfig).toContain("assetsDir: 'assets/v5'");
-  expect(serviceWorker).toContain("const VERSION = 'dialog-switch-v5'");
+  expect(serviceWorker).toContain("const VERSION = 'dialog-switch-v6'");
   expect(serviceWorker).toContain("'/assets/harbor-dialogue-demo.webm'");
 });
 
@@ -84,6 +84,7 @@ test('ships the complete landing skeleton, 44px target rules, and no nested comp
   expect(styles).toMatch(/\.brand \{ min-height: 44px/);
   expect(styles).toMatch(/\.mini-button \{ min-height: 44px/);
   expect(styles).toMatch(/\.skip-link \{[\s\S]*min-height: 44px/);
+  expect(styles).toContain('content-visibility: auto');
 });
 
 test('ships route-specific canonical, social, and favicon metadata', async () => {

@@ -10,13 +10,13 @@ one of these copy surfaces changes without a matching audit update.
 | Source | SHA-256 |
 | --- | --- |
 | `index.html` | `4b3646630193fe49c0470ac92a00a23dba780545decdb773b39a59509fec39ec` |
-| `src/main.ts` | `f921b74dcead2d5ab2809b04fd3355c4dcfd2252079d15bdf242e5a6c0f6d4df` |
+| `src/main.ts` | `2f0d71335f7097986feb26015b05c643d0553b07a4cf25c87e6139badb284ea0` |
 | `src/model.ts` | `4d987d258fd5ee50df27bf12f511d5ca3d626693fb246d205f4032078e35969a` |
 | `public/route-focus.js` | `34c1a362861d93aa34e8ecc479f97e37e9a766d389f4141b04dafcaea9725022` |
 | `README.md` | `0d5b119d8e061fcde1894d750a0b34d0c122f4b7ad964417e598cb4aca903465` |
-| `public/privacy/index.html` | `53f5976f9ba0f5e9e21323357a2994e510ff506455ef1a4222aef7252cec905c` |
-| `public/terms/index.html` | `7be2f6d2b1e5f7db96962dddffe032f743b21e8f09464cc70cf7eda5fca019ff` |
-| `public/404.html` | `73cac21d18d4e3fbc574b449a57f8db6ca38aba4150d53bdf6af2c96efe23965` |
+| `public/privacy/index.html` | `d1cc902666ab77275bec6c8f0d5f22d2e3a27e47980ce6882b8d444d95d17842` |
+| `public/terms/index.html` | `178a0ce5c5b162d6e491cf61b9d05c6e10ec64c32b6c7d120cec7df4fca7582b` |
+| `public/404.html` | `e4167ef6e7802c75da7eba6f7e3e97c79e3e4fd4b9655fae58fff056d02a2298` |
 
 ## Landing and demo — complete sentence inventory
 
@@ -102,6 +102,8 @@ Variables such as a filename, cue count, duration, or time count as one word.
 | Dialogue only WebVTT exported with [count] cues. | 7 | Pass |
 | Corrected WebVTT exported with all [count] cues. | 7 | Pass |
 | This is not a Dialog Only Switch session file. | 9 | Pass |
+| This session file is not valid JSON. | 7 | Pass |
+| Choose a session file exported by Dialog Only Switch. | 9 | Pass |
 | Imported [file]. | 2 | Pass |
 | Your video still needs to be selected locally. | 8 | Pass |
 | Your original file will not be changed. | 7 | Pass |
@@ -129,7 +131,7 @@ Variables such as a filename, cue count, duration, or time count as one word.
 | Save or transfer your caption session · How it works · Limits and privacy | Headings | Pass |
 | All cues · Dialogue only · Environmental | Terms | Pass |
 | Show hidden environmental cues temporarily | Control help | Pass |
-| Reset demo · Open an empty viewer · Install update | Actions | Pass |
+| Reset demo · Start for real · Install update | Actions | Pass |
 | Export Dialogue only VTT · Export corrected VTT · Export session | Actions | Pass |
 
 ## Privacy, terms, and 404 sentences

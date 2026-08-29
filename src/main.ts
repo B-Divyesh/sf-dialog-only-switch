@@ -13,7 +13,7 @@ import { clearSession, loadSession, saveSession, type SessionNamespace } from '.
 
 const DEMO_VTT_URL = '/assets/harbor-dialogue-demo.vtt';
 const DEMO_VIDEO_URL = '/assets/harbor-dialogue-demo.webm';
-const BUILD_ID = '2026.08.29.5';
+const BUILD_ID = '2026.08.29.6';
 const demoMode = window.location.pathname === '/demo' || new URLSearchParams(window.location.search).get('demo') === '1';
 const sessionNamespace: SessionNamespace = demoMode ? 'demo' : 'real';
 
@@ -54,7 +54,7 @@ app.innerHTML = `
 
     <section class="demo-banner" id="demo-banner" ${demoMode ? '' : 'hidden'} aria-label="Demo mode">
       <div><strong>Demo — sample data, nothing is saved</strong><span>Try the harbor video without changing your session. Free to use.</span></div>
-      <div class="demo-actions"><button class="quiet-button" id="reset-demo" type="button">Reset demo</button><button class="solid-button" id="start-real" type="button">Open an empty viewer</button></div>
+      <div class="demo-actions"><button class="quiet-button" id="reset-demo" type="button">Reset demo</button><button class="solid-button" id="start-real" type="button">Start for real</button></div>
     </section>
 
     <main id="main" class="${demoMode ? 'demo-main' : ''}" tabindex="-1">
@@ -350,7 +350,7 @@ function updateCurrentCue(keepPosition = false): void {
   }
 }
 
-function setMode(nextMode: CaptionMode): void {
+function setMode(nextMode: CaptionMode, shouldSave = true): void {
   mode = nextMode;
   if (mode === 'all') revealSuppressed = false;
   document.querySelectorAll<HTMLInputElement>('input[name="caption-mode"]').forEach((input) => { input.checked = input.value === mode; });
@@ -358,7 +358,7 @@ function setMode(nextMode: CaptionMode): void {
   revealButton.disabled = mode !== 'dialogue' || !cues.some((cue) => kindFor(cue) === 'effect');
   revealButton.setAttribute('aria-pressed', String(revealSuppressed));
   renderTranscript();
-  queueSave();
+  if (shouldSave) queueSave();
 }
 
 function setReveal(active: boolean): void {
@@ -379,7 +379,7 @@ function openPractice(cue: CaptionCue): void {
   announce(`Selected the line at ${formatTime(cue.start)} for practice.`);
 }
 
-function loadCaptionText(source: string, name: string, imported?: Partial<SavedSession>): void {
+function loadCaptionText(source: string, name: string, imported?: Partial<SavedSession>, shouldSave = true): void {
   const parsed = parseVtt(source);
   cues = parsed.cues;
   vttText = source;
@@ -389,10 +389,13 @@ function loadCaptionText(source: string, name: string, imported?: Partial<SavedS
   byId('caption-file-name').textContent = vttName;
   selectedPracticeCue = null;
   practicePanel.hidden = true;
-  setMode(imported?.mode === 'dialogue' ? 'dialogue' : 'all');
+  // A restored session must be read-only until the person changes something.
+  // In particular, restoring a real session after leaving the demo must never
+  // refresh its savedAt value or otherwise rewrite that separate namespace.
+  setMode(imported?.mode === 'dialogue' ? 'dialogue' : 'all', false);
   const warning = parsed.warnings.length ? ` ${parsed.warnings.length} malformed section${parsed.warnings.length === 1 ? ' was' : 's were'} skipped.` : '';
   announce(`Loaded ${cues.length} timed cue${cues.length === 1 ? '' : 's'} from ${vttName}.${warning}`, parsed.warnings.length ? 'neutral' : 'success');
-  queueSave();
+  if (shouldSave) queueSave();
 }
 
 async function handleCaptionFile(file: File): Promise<void> {
@@ -438,7 +441,7 @@ async function restoreDemo(): Promise<void> {
       await loadDemo();
       return;
     }
-    loadCaptionText(saved.vttText, saved.vttName, saved);
+    loadCaptionText(saved.vttText, saved.vttName, saved, false);
     openVideo(DEMO_VIDEO_URL, 'harbor-dialogue-demo.webm');
     announce('Demo restored. Your sample cue changes are ready.', 'success');
   } catch {
@@ -591,12 +594,24 @@ exportCorrectedVttButton.addEventListener('click', () => {
   announce(`Corrected WebVTT exported with all ${cues.length} cues.`, 'success');
 });
 
+function readImportedSession(text: string): Partial<SavedSession> & Pick<SavedSession, 'vttText'> {
+  let imported: unknown;
+  try {
+    imported = JSON.parse(text) as unknown;
+  } catch {
+    throw new Error('This session file is not valid JSON. Choose a session file exported by Dialog Only Switch.');
+  }
+  if (!imported || typeof imported !== 'object') throw new Error('This is not a Dialog Only Switch session file.');
+  const session = imported as Partial<SavedSession>;
+  if (session.version !== 1 || typeof session.vttText !== 'string') throw new Error('This is not a Dialog Only Switch session file.');
+  return session as Partial<SavedSession> & Pick<SavedSession, 'vttText'>;
+}
+
 importInput.addEventListener('change', () => {
   const file = importInput.files?.[0];
   if (!file) return;
   void file.text().then((text) => {
-    const imported = JSON.parse(text) as Partial<SavedSession>;
-    if (imported.version !== 1 || typeof imported.vttText !== 'string') throw new Error('This is not a Dialog Only Switch session file.');
+    const imported = readImportedSession(text);
     loadCaptionText(imported.vttText, imported.vttName || 'imported.vtt', imported);
     announce(`Imported ${file.name}. Your video still needs to be selected locally.`, 'success');
   }).catch(handleError).finally(() => { importInput.value = ''; });
@@ -696,7 +711,7 @@ if (demoMode) {
   void loadSession('real').then((saved) => {
     if (!saved?.vttText) return;
     try {
-      loadCaptionText(saved.vttText, saved.vttName, saved);
+      loadCaptionText(saved.vttText, saved.vttName, saved, false);
       announce(`Restored ${saved.vttName}. Select the local video again to continue.`, 'success');
     } catch (error) {
       handleError(error instanceof VttParseError ? error : new Error('The saved caption session could not be restored.'));
