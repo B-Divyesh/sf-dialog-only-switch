@@ -81,12 +81,31 @@ checks do not apply.
 
 ## Deployment
 
-The configured static deployment is triggered by pushing `main`. After the
-repair commit is pushed, verify the live deployment at
-`https://dialog-only-switch.sociobot.in/?demo=1` and append its exact
-artifact hashes and response-policy evidence here.
+Repair commit `56a77cd40e7e0720abf37de63ae8d5e677e2e33b` was pushed to `main`
+and deployed to Azure Static Web App `sf-dialog-only-switch` in `sociobot`,
+production environment. The public custom domain now serves the same bytes as
+the production build:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `index.html` | `0ee1ad5e0b2aee578c4732a5d2bc600569ea8065196ceb4028d5e4f12dfc0f11` |
+| `assets/v5/index-B-mtXwZg.js` | `cac946d9695a25a6831d55e7ed605995cd2ee288d54ecd3dfa1db99021ecb388` |
+| `sw.js` | `11c357a0a7624cc8df2cb40abf920c2962b8079b67926079cb6c48f4a64f1ac9` |
+
+Live `GET /` returns CSP (including header-delivered `frame-ancestors 'none'`),
+HSTS, `Referrer-Policy: strict-origin-when-cross-origin`, `nosniff`, and
+`X-Frame-Options: DENY`. The content-hashed JS returns one-year immutable
+caching, the manifest returns `application/manifest+json`, and `/demo`, legal
+pages, robots, and sitemap return 200. An unknown route returns the designed
+404 with HTTP 404.
+
+`verify-url.sh` passed on live home and demo. A live Playwright check found no
+app console or page errors, one h1 and a main landmark on home, demo, privacy,
+terms, and 404, and zero Axe violations. The 390 px demo had no horizontal
+overflow. A full live demo flow made eight same-origin GET requests with no
+bodies, and a fresh service-worker context reloaded the six-cue sample while
+offline with the visible Offline-ready state.
 
 ## Known gaps and next steps
 
-No product gaps are known locally. The only pending step at this point is live
-deployment parity verification after the push.
+No known gaps. No next step is required for this repair.
