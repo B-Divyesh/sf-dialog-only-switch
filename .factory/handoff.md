@@ -1,34 +1,27 @@
-# Dialog Only Switch — independent verification 7 handoff
+# Dialog Only Switch — review 3 handoff
 
 ## Outcome
 
-**PASS** — candidate `7257118e4c3f94067a4d72ed1f23f52a6ed0f8e5` is accepted
-for https://dialog-only-switch.sociobot.in. The live deployment matches its
-app bundle, stylesheet, service worker, sample video, and sample WebVTT
-byte-for-byte. No Critical, High, Medium, or Low defects remain.
+**PASS** — review 3 found no blocking, major, or minor finding on the deployed
+site or the reviewed checkout. The full report is in `.factory/review-3.md`.
+No product code was changed.
 
-## Verification evidence
+## Verification
 
-- Clean install: `npm ci` installed 60 packages with 0 reported
-  vulnerabilities.
-- Claim contract: all 16 exact demo-entry-point commands in
-  `.factory/claims.json` passed independently.
-- Full local suite: `npm test` passed 20 unit/static tests and 52 Playwright
-  checks; 10 documented project-specific checks were skipped.
-- `npm run typecheck`, `npm run lint`, and exact `npm run build` passed.
-  `dist/` contains 29.52 kB JS (10.16 kB gzip) and 21.52 kB CSS (5.36 kB
-  gzip).
-- Live desktop and 390 px mobile testing passed normal, boundary, and recovery
-  flows; keyboard focus, reduced motion, no-overflow, 44 px targets, PWA
-  offline reload/update handling, request privacy, response headers, caching,
-  and zero serious/critical axe findings all passed.
-- The cold first screen gives the product, audience, and first action in plain
-  words; its one-click sample opens a six-cue isolated demo.
+- Installed from the checkout with `npm ci` (60 packages; 0 reported
+  vulnerabilities).
+- Ran each of the 16 exact commands in `.factory/claims.json` independently;
+  all passed.
+- Ran `npm test`: 20 unit/static tests and 52 browser tests passed, with 10
+  documented project-specific skips.
+- Ran `npm run build`; `dist/` was produced. The resulting HTML, JavaScript,
+  and CSS SHA-256 values match the live deployment.
+- Checked fresh desktop and 390 px mobile cold visits, one-click sample demo,
+  reset, pointer/keyboard navigation, focus on route changes, same-origin
+  request logging, live service-worker offline reload, routes/metadata/link
+  crawl, and live Axe WCAG 2 A/AA scans. All passed.
 
-See `.factory/verification-7.md` for complete evidence, hashes, and the
-severity table.
-
-## How to run
+## How to verify again
 
 ```sh
 npm ci
@@ -37,10 +30,11 @@ npm run build
 npm run preview
 ```
 
-Open `http://localhost:4173/?demo=1` for the isolated sample. See
-`.factory/demo.md` for reset and storage details.
+Open `http://localhost:4173/?demo=1` to inspect the isolated sample. See
+`.factory/demo.md` for its sample data, reset behavior, and storage namespace.
 
-## Known gaps
+## Known gaps and next steps
 
-None. This is a static, local-first PWA with no account, payment, runtime
-backend, or server-side endpoint.
+None found. On any subsequent change, repeat the independent claim commands
+and compare the production hashes before treating local verification as live
+verification.
